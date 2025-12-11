@@ -1,0 +1,14 @@
+Game
+- name
+- player list
+- round list
+- max number of rounds?
+
+player
+- name
+- colour?
+- image?
+
+round
+- each player has a score
+
