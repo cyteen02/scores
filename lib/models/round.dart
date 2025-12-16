@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/player.dart';
 
-class Round extends Equatable {
+class Round extends Equatable with MyUtils{
 
 
   final Map<String, int> scores = {};
@@ -11,6 +12,8 @@ class Round extends Equatable {
       scores[p.name] = 0;
      }
   }
+
+  Round.blank();
 
   @override
   List<Object?> get props => [scores];
@@ -52,19 +55,38 @@ class Round extends Equatable {
 
 
   void updatePlayerScore(Player player, int score) {
-    print(">> updatePlayerScore");
-    print(">>  from ${scores[player.name]} with $score");
+    debugMsg("updatePlayerScore");
+    debugMsg("from ${scores[player.name]} with $score");
     scores[player.name] = ( scores[player.name] ?? 0) + score;
-    print(">>  now ${scores[player.name]}");
+    debugMsg("now ${scores[player.name]}");
   }
 
+ // Convert to JSON
+  Map<String, dynamic> toJson() {
+    debugMsg("toJson");
+    return {
+      'scores': scores,
+    };
+  }
+
+  // Create from JSON
+  factory Round.fromJson(Map<String, dynamic> json) {
+    Round round = Round.blank();
+    if (json['scores'] != null) {
+      Map<String, dynamic> scoresMap = json['scores'];
+      scoresMap.forEach((key, value) {
+        round.scores[key] = value as int;
+      });
+    }
+    return round;
+  }
 
   @override
   String toString() {
     String scoresString = "";
     scores.forEach(
       (playerName, score) =>
-          scoresString = '$scoresString PlayerName: $playerName Score: ${score}',
+          scoresString = '$scoresString PlayerName: $playerName Score: $score',
     );
     return scoresString;
   }

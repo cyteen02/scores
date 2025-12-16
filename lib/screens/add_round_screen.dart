@@ -1,4 +1,17 @@
+/*---------------------------------------------------------------------------
+*
+* Copyright (c) 2025 Paul Graves
+* All Rights Reserved.
+*
+* You may not use, distribute and modify this code under any circumstances
+*
+* Created: 12/13/2025
+*
+*----------------------------------------------------------------------------*/
+
+
 import 'package:flutter/material.dart';
+import 'package:scores/mixin/my_utils.dart';
 // import 'package:flutter/widget_previews.dart';
 
 import 'package:scores/models/game.dart';
@@ -6,33 +19,43 @@ import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
 
 class AddRoundScreen extends StatefulWidget {
-  const AddRoundScreen({super.key, required this.game});
   final Game game;
+  final Round? currentRound;
+
+  const AddRoundScreen({super.key, required this.game, this.currentRound});
 
   @override
   State<AddRoundScreen> createState() => _AddRoundScreenState();
 }
 
-class _AddRoundScreenState extends State<AddRoundScreen> {
+class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
   Round newRound = Round([]);
+  bool editExistingRound = true;
 
   @override
   void initState() {
-
     super.initState();
     // Your initialization code here
-    print('>>_AddRoundScreenState initState');
-    print('Received: ${widget.game}');
-    newRound.setPlayers(widget.game.players);
+    debugMsg('_AddRoundScreenState initState');
+
+    editExistingRound = (widget.currentRound != null);
+
+    debugMsg('Received: ${widget.game} editExistingRound $editExistingRound');
+
+    if (editExistingRound) {
+      newRound = widget.currentRound!;
+    } else {
+      newRound.setPlayers(widget.game.players);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    print(">> _AddRoundScreenState build");
+    debugMsg("_AddRoundScreenState build");
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add a round'),
+        title: Text("${editExistingRound ? 'Edit' : 'Add'} a round"),
         centerTitle: true,
         actions: [
           IconButton(
@@ -44,10 +67,10 @@ class _AddRoundScreenState extends State<AddRoundScreen> {
         ],
       ),
       body: Container(child: addPlayerScores(widget.game)),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: Icon(Icons.add),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {},
+      //   child: Icon(Icons.add),
+      // ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
@@ -55,7 +78,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> {
   Widget addPlayerScores(Game game) {
     //    Round newRound = Round(game.players);
 
-    Container c = Container();
+//    Container c = Container();
 
     List<Widget> scoresRow = [];
 
@@ -66,7 +89,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> {
   }
 
   Widget addPlayerScore(Round round, Player player) {
-    print(">> row for ${player.name} current ${round.getScore(player)}");
+    debugMsg("row for ${player.name} current ${round.getScore(player)}");
     return Column(
       children: [
         Row(
@@ -133,18 +156,18 @@ class _AddRoundScreenState extends State<AddRoundScreen> {
   }
 
   void buttonPressed(Round round, Player player, int scoreButton) {
-    print(">> buttonPressed ${player.name} add score of $scoreButton");
+    debugMsg("buttonPressed ${player.name} add score of $scoreButton");
 
     setState(() {
-      print(round);
+      debugMsg(round.toString());
       round.updatePlayerScore(player, scoreButton);
-      print(round);
+      debugMsg(round.toString());
     });
   }
 
   void savePressed(Game game, Round newRound) {
-    print(">> savePressed returning newRound $newRound");
-//    widget.game.addRound(newRound);
+    debugMsg("savePressed returning newRound $newRound");
+    //widget.game.addRound(newRound);
     Navigator.pop(context, newRound);
   }
 }
