@@ -10,6 +10,7 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 //import 'package:flutter/widget_previews.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:scores/mixin/my_utils.dart';
@@ -31,6 +32,8 @@ class ListScreen extends StatefulWidget {
 //---------------------------------------------------------------
 
 class _ListScreenState extends State<ListScreen> with MyUtils {
+  int _bnbSelectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,6 +49,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
         child: Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: bottomNavigationBar(widget.game),
     );
   }
 
@@ -71,20 +75,192 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
   //---------------------------------------------------------------
 
   Widget playersRow(List<Player> players) {
-    List<Text> playerTexts = [];
+    List<Widget> playerNames = [];
 
     for (Player player in players) {
-      playerTexts.add(
-        Text(
-          player.name,
-          style: TextStyle(color: player.color, fontSize: 30),
-          textAlign: TextAlign.center,
+      playerNames.add(
+        MenuAnchor(
+          style: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.white),
+            elevation: WidgetStateProperty.all(4),
+          ),
+          builder: (context, controller, child) {
+            return InkWell(
+              onTap: () {
+                if (controller.isOpen) {
+                  controller.close();
+                } else {
+                  controller.open();
+                }
+              },
+              child: Text(
+                player.name,
+                style: TextStyle(color: player.color, fontSize: 30),
+                textAlign: TextAlign.center,
+              ),
+            );
+          },
+          menuChildren: [
+            MenuItemButton(
+              child: Center(child: Text('Change name')),
+              onPressed: () {
+                setState(() {
+                  changePlayerName(player);
+                });
+              },
+            ),
+            MenuItemButton(
+              child: Center(child: Text('Change colour')),
+              onPressed: () {
+                setState(() {
+                  changePlayerColour(player);
+                });
+              },
+            ),
+          ],
         ),
       );
     }
-    return textRow(playerTexts);
+
+    return widgetRow(playerNames);
   }
 
+  //---------------------------------------------------------------
+
+  void changePlayerName(Player player) async {
+    debugMsg("changePlayerName $player");
+
+    final name = await changeNameDialog(context);
+
+    if (name != null && name.isNotEmpty) {
+      debugMsg('Name entered: $name');
+      player.setName(name);
+      // Do something with the name
+    } else {
+      debugMsg('Dialog cancelled or empty name');
+    }
+
+    debugMsg("Game is now ${widget.game}");
+
+    setState(() {});
+  }
+
+  //---------------------------------------------------------------
+
+  Future<String?> changeNameDialog(BuildContext context) async {
+    final formKey = GlobalKey<FormState>();
+    final controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          //    AlertDialog(
+          title: const Text('Enter Name'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+              validator: (value) {
+                debugMsg("Checking $value");
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a name';
+                }
+                if (widget.game.playerNameExists(value)) {
+                  return 'Sorry $value is already a player';
+                }
+
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text('Ok'),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(
+                    context,
+                  ).pop(controller.text); // Or whatever you need to do
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //---------------------------------------------------------------
+
+  void changePlayerColour(Player player) async {
+    debugMsg("changePlayerColour $player");
+    Color? newColour = await showColorPickerDialog(
+      context,
+      initialColor: player.color,
+    );
+    debugMsg("newColor $newColour");
+    if (newColour != null) {
+      setState(() {
+        player.setColor(newColour);
+      });
+
+      final GameStorage storage = GameStorage();
+      try {
+        debugMsg("_ListScreenState changePlayerColour saving game");
+        storage.saveGame(widget.game);
+      } catch (e) {
+        debugMsg("_ListScreenState changePlayerColour ${e.toString()}", true);
+      }
+    }
+  }
+
+  //---------------------------------------------------------------
+
+  Future<Color?> showColorPickerDialog(
+    BuildContext context, {
+    Color initialColor = Colors.blue,
+  }) async {
+    Color selectedColor = initialColor;
+
+    return showDialog<Color>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pick a color'),
+          content: SingleChildScrollView(
+            child: ColorPicker(
+              pickerColor: selectedColor,
+              //              paletteType: PaletteType.hsv,
+              displayThumbColor: false,
+              onColorChanged: (Color color) {
+                selectedColor = color;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(selectedColor),
+              child: const Text('Select'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   //---------------------------------------------------------------
 
   Widget totalScoresRow(Game game) {
@@ -99,7 +275,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
         ),
       );
     }
-    return textRow(totalScoreTexts);
+    return widgetRow(totalScoreTexts);
   }
 
   //---------------------------------------------------------------
@@ -117,15 +293,15 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
       );
     }
 
-    return (slider(game, round, textRow(textItems)));
+    return (slider(game, round, widgetRow(textItems)));
   }
 
   //---------------------------------------------------------------
 
-  Widget textRow(List<Text> textItems) {
+  Widget widgetRow(List<Widget> textItems) {
     List<Widget> rowChildren = [];
 
-    for (Text item in textItems) {
+    for (Widget item in textItems) {
       rowChildren.add(
         Expanded(
           child: Padding(padding: const EdgeInsets.all(14.0), child: item),
@@ -149,6 +325,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
   }
 
   //---------------------------------------------------------------
+
   Widget slider(Game game, Round round, Widget row) {
     return Slidable(
       // Specify a key if the Slidable is dismissible.
@@ -200,12 +377,6 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
     );
   }
 
-  // void doNothing(BuildContext context) {}
-
-  //   void onPressedMethod(BuildContext context){
-  //     print(">>onPressedMethod");
-  //   }
-
   //---------------------------------------------------------------
 
   Future<void> addButtonPressed(BuildContext context) async {
@@ -221,14 +392,13 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
 
     widget.game.addRound(newRound);
 
-
     final GameStorage storage = GameStorage();
     try {
       debugMsg("_ListScreenState addButtonPressed saving game");
       storage.saveGame(widget.game);
     } catch (e) {
       debugMsg("_ListScreenState addButtonPressed ${e.toString()}", true);
-    } 
+    }
 
     // Update UI or handle the returned data
     //    widget.game.addRound(newRound);
@@ -237,7 +407,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
   }
 
   //---------------------------------------------------------------
-  
+
   void deleteRowSlider(Game game, Round round) {
     debugMsg("deleteRowSlider round $round");
 
@@ -253,7 +423,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
       storage.saveGame(widget.game);
     } catch (e) {
       debugMsg("_ListScreenState deleteRowSlider ${e.toString()}", true);
-    } 
+    }
     setState(() {});
   }
 
@@ -284,12 +454,109 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
       storage.saveGame(widget.game);
     } catch (e) {
       debugMsg("_ListScreenState editRowSlider ${e.toString()}", true);
-    } 
-
+    }
 
     setState(() {});
 
     debugMsg("num rounds after edit ${game.rounds.length}");
   }
+  //---------------------------------------------------------------
+
+  static const bnbNumPlayers = 0;
+  static const bnbGameEnd = 1;
+  static const bnbClear = 2;
+
+  BottomNavigationBar bottomNavigationBar(Game game) {
+    return BottomNavigationBar(
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Players'),
+        BottomNavigationBarItem(icon: Icon(Icons.save), label: 'The End'),
+        BottomNavigationBarItem(icon: Icon(Icons.clear), label: 'Clear'),
+      ],
+      currentIndex: _bnbSelectedIndex,
+      selectedItemColor: Colors.blue,
+      onTap: ((int index) {
+        _onItemTapped(index, game);
+      }),
+    );
+  }
+
+  //---------------------------------------------------------------
+
+  void _onItemTapped(int index, Game game) async {
+    debugMsg("_onItemTapped index $index");
+
+    switch (index) {
+      case bnbNumPlayers:
+        debugMsg("calling showNumberPicker");
+
+        int? selectedNumber = await showNumberPicker(context);
+
+        //        MyUtils.showOkBox(context, "Error", "number $selectedNumber");
+        debugMsg("selectedNumber $selectedNumber");
+
+      case bnbClear:
+        debugMsg("calling MyUtils.showDialogBox");
+
+        MyUtils.showDialogBox(
+          context,
+          "Clear scores?",
+          "Confirm",
+          "Cancel",
+        ).then<int>((var r) {
+          debugMsg("showDialogBox returned $r");
+          if (r == 1) {
+            debugMsg("calling resetScores");
+
+            setState(() {
+              game.resetScores();
+            });
+          }
+          return r;
+        });
+
+        break;
+      default:
+    }
+    setState(() {
+      _bnbSelectedIndex = index;
+    });
+  }
+
+  //---------------------------------------------------------------
+
+  Future<int?> showNumberPicker(BuildContext context) async {
+    return showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Number of players'),
+          content: SizedBox(
+            width: double.minPositive,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: 8,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text('${index + 1}'),
+                  onTap: () {
+                    debugMsg("onTap index $index");
+                    Navigator.of(context).pop(index + 1);
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   //---------------------------------------------------------------
 }

@@ -14,11 +14,13 @@ import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/game.dart';
 import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
+// import 'package:scores/models/player.dart';
+// import 'package:scores/models/round.dart';
 
 //import 'package:flutter/widget_previews.dart';
 import 'package:scores/screens/list_screen.dart';
 import 'package:scores/services/game_storage.dart';
-import 'package:scores/extensions/color_extensions.dart';
+//import 'package:scores/extensions/color_extensions.dart';
 
 void main() {
   runApp(Scores());
@@ -89,20 +91,20 @@ debugMsg(c.toString(),true);
 
       // game.name = "Rummy";
 
-      // Player player = Player('Paul');
-      // player.setColor(Colors.red);
-      // game.addPlayer(player);
+      // Player player1 = Player('Paul');
+      // player1.setColor(Colors.red);
+      // game.addPlayer(player1);
 
-      // player = Player('Jane');
-      // player.setColor(Colors.blue);
-      // game.addPlayer(player);
+      // Player player2 = Player('Jane');
+      // player2.setColor(Colors.blue);
+      // game.addPlayer(player2);
 
       // Round round = Round(game.players);
-      // round.setScoreByName('Paul', 10);
-      // round.setScoreByName('Jane', 15);
+      // round.setScore(player1, 10);
+      // round.setScore(player2, 15);
       // game.addRound(round);
 
-      debugMsg("Game at thsis point is ${game.toString()}");
+      debugMsg("Game at this point is ${game.toString()}");
 
     } catch (e) {
       debugMsg("_ScoresState loadGameData ${e.toString()}", true);

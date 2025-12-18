@@ -47,9 +47,18 @@ class Game with MyUtils {
     _name = name;
   }
 
+  //-----------------------------------------------------------------
+
   void addPlayer(Player player) {
     _players.add(player);
   }
+
+  //-----------------------------------------------------------------
+
+  bool playerNameExists(String playerName) {
+    return players.any((p) => p.name == playerName);
+  }
+  //-----------------------------------------------------------------
 
   void addPlayerByName(String playerName) {
     bool playerNameFound = false;
@@ -63,18 +72,39 @@ class Game with MyUtils {
     }
   }
 
+  //-----------------------------------------------------------------
+
   void addRound(Round round) {
     _rounds.add(round);
   }
 
+  //-----------------------------------------------------------------
+
+  Player? getPlayerByName(String playerName) {
+    return players.cast<Player?>().firstWhere(
+      (p) => p?.name == playerName,
+      orElse: () => null,
+    );
+  }
+  //-----------------------------------------------------------------
+
+  Player? getPlayerById(String playerId) {
+    return players.cast<Player?>().firstWhere(
+      (p) => p?.id == playerId,
+      orElse: () => null,
+    );
+  }
+
+  //-----------------------------------------------------------------
+
   List<String> getPlayerNames() {
-    List<String> playersList = [];
+    return players.map((p) => p.name).toList();
+  }
 
-    for (var player in _players) {
-      playersList.add(player.name);
-    }
+  //-----------------------------------------------------------------
 
-    return playersList;
+  List<String> getPlayerIds() {
+    return players.map((p) => p.id).toList();
   }
 
   //-----------------------------------------------------------------
@@ -85,18 +115,18 @@ class Game with MyUtils {
     Map<String, int> totalScores = {};
 
     for (Round round in rounds) {
-      for (String playerName in round.getPlayerNames()) {
+      for (String playerId in round.getPlayerIds()) {
         // int prevScore = totalScores[playerName] ?? 0;
         // print(">> prevScore $prevScore");
 
-        int thisScore = round.getScoreByName(playerName) ?? 0;
+        int thisScore = round.getScoreById(playerId) ?? 0;
         // print(">> thisScore $thisScore");
 
         // int newScore = prevScore + thisScore;
 
         // print(">> newScore $newScore");
 
-        totalScores[playerName] = (totalScores[playerName] ?? 0) + thisScore;
+        totalScores[playerId] = (totalScores[playerId] ?? 0) + thisScore;
         //        totalScores.update(playerName, (value) => newScore, ifAbsent: () => 0 );
       }
     }
@@ -116,7 +146,15 @@ class Game with MyUtils {
 
   //-----------------------------------------------------------------
 
+  void resetScores() {
+    debugMsg("game resetScores");
+    _rounds.clear();
+  }
+
+  //-----------------------------------------------------------------
+
   void clear() {
+    debugMsg("game clear");
     _players.clear();
     _rounds.clear();
   }
@@ -185,7 +223,7 @@ class Game with MyUtils {
       buffer.write(round.toString());
     }
     buffer.write("]");
-    
+
     return buffer.toString();
   }
 

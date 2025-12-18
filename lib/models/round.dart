@@ -1,15 +1,26 @@
+/*---------------------------------------------------------------------------
+*
+* Copyright (c) 2025 Paul Graves
+* All Rights Reserved.
+*
+* You may not use, distribute and modify this code under any circumstances
+*
+* Created: 12/17/2025
+*
+*----------------------------------------------------------------------------*/
+
+
 import 'package:equatable/equatable.dart';
 import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/player.dart';
 
 class Round extends Equatable with MyUtils{
 
-
   final Map<String, int> scores = {};
 
   Round(List<Player>players) {
      for ( Player p in players ) {
-      scores[p.name] = 0;
+      scores[p.id] = 0;
      }
   }
 
@@ -19,27 +30,26 @@ class Round extends Equatable with MyUtils{
   List<Object?> get props => [scores];
 
   int? getScore(Player player) {
-    return scores[player.name];
+    return scores[player.id];
   }
 
-
-  int? getScoreByName(String playerName) {
-    return scores[playerName];
+  int? getScoreById(String id) {
+    return scores[id];
   }
 
   void setPlayers(List<Player> players) {
      for ( Player p in players ) {
-      scores[p.name] = 0;
+      scores[p.id] = 0;
      }
   }
 
   void setScore(Player player, int score) {
-    scores[player.name] = score;
+    scores[player.id] = score;
   }
 
 
-  void setScoreByName(String playerName, int score) {
-    scores[playerName] = score;
+  void setScoreById(String id, int score) {
+    scores[id] = score;
   }
 
 
@@ -51,14 +61,14 @@ class Round extends Equatable with MyUtils{
     return scoresList;
   }
 
-  List<String> getPlayerNames() => scores.keys.toList();
+  List<String> getPlayerIds() => scores.keys.toList();
 
 
   void updatePlayerScore(Player player, int score) {
     debugMsg("updatePlayerScore");
-    debugMsg("from ${scores[player.name]} with $score");
-    scores[player.name] = ( scores[player.name] ?? 0) + score;
-    debugMsg("now ${scores[player.name]}");
+    debugMsg("from ${scores[player.id]} with $score");
+    scores[player.id] = ( scores[player.id] ?? 0) + score;
+    debugMsg("now ${scores[player.id]}");
   }
 
  // Convert to JSON
