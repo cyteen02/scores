@@ -9,7 +9,6 @@
 *
 *----------------------------------------------------------------------------*/
 
-
 import 'package:flutter/material.dart';
 import 'package:scores/mixin/my_utils.dart';
 // import 'package:flutter/widget_previews.dart';
@@ -17,6 +16,8 @@ import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/game.dart';
 import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
+
+//--------------------------------------------------------------
 
 class AddRoundScreen extends StatefulWidget {
   final Game game;
@@ -28,7 +29,9 @@ class AddRoundScreen extends StatefulWidget {
   State<AddRoundScreen> createState() => _AddRoundScreenState();
 }
 
-class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
+//--------------------------------------------------------------
+
+class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
   Round newRound = Round([]);
   bool editExistingRound = true;
 
@@ -49,6 +52,8 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     }
   }
 
+  //--------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     debugMsg("_AddRoundScreenState build");
@@ -66,7 +71,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
           ),
         ],
       ),
-      body: Container(child: addPlayerScores(widget.game)),
+      body: SingleChildScrollView(child: addPlayerScores(widget.game)),
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () {},
       //   child: Icon(Icons.add),
@@ -75,10 +80,12 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     );
   }
 
+  //--------------------------------------------------------------
+
   Widget addPlayerScores(Game game) {
     //    Round newRound = Round(game.players);
 
-//    Container c = Container();
+    //    Container c = Container();
 
     List<Widget> scoresRow = [];
 
@@ -87,6 +94,8 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     }
     return Column(children: scoresRow);
   }
+
+  //--------------------------------------------------------------
 
   Widget addPlayerScore(Round round, Player player) {
     debugMsg("row for ${player.name} current ${round.getScore(player)}");
@@ -140,6 +149,8 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     );
   }
 
+  //--------------------------------------------------------------
+
   Widget scoreTextButton(Round round, Player player, String scoreText) {
     return TextButton(
       style: TextButton.styleFrom(
@@ -155,6 +166,8 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     );
   }
 
+  //--------------------------------------------------------------
+
   void buttonPressed(Round round, Player player, int scoreButton) {
     debugMsg("buttonPressed ${player.name} add score of $scoreButton");
 
@@ -165,9 +178,13 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils{
     });
   }
 
+  //--------------------------------------------------------------
+
   void savePressed(Game game, Round newRound) {
     debugMsg("savePressed returning newRound $newRound");
     //widget.game.addRound(newRound);
     Navigator.pop(context, newRound);
   }
+
+  //--------------------------------------------------------------
 }

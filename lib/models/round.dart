@@ -95,8 +95,8 @@ class Round extends Equatable with MyUtils{
   String toString() {
     String scoresString = "";
     scores.forEach(
-      (playerName, score) =>
-          scoresString = '$scoresString PlayerName: $playerName Score: $score',
+      (playerId, score) =>
+          scoresString = '$scoresString PlayerId: $playerId Score: $score',
     );
     return scoresString;
   }

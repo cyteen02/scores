@@ -9,6 +9,7 @@
 *
 *----------------------------------------------------------------------------*/
 
+import 'package:flutter/material.dart';
 import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
@@ -24,12 +25,12 @@ class Game with MyUtils {
 
   // Constructor
   Game(String name) {
-    _id = uuid.v1();
+    _id = uuid.v1().substring(0,8);
     _name = name;
   }
 
   Game.empty() {
-    _id = uuid.v1();
+    _id = uuid.v1().substring(0,8);
   }
 
   // getters
@@ -42,6 +43,24 @@ class Game with MyUtils {
   // Setters
 
   set name(String name) => _name = name;
+
+  void setPlayers(List<Player> players ) {
+    debugMsg("Game setPlayers $players");
+    for (int p = 0 ; p < players.length ; p ++) {
+      _players.add(players[p]);
+    }
+  }
+
+  void setRounds(List<Round> rounds ) {
+    debugMsg("Game setRounds $rounds");    
+    for (int r = 0 ; r < rounds.length ; r ++) {
+      _rounds.add(rounds[r]);
+    }
+  }
+
+  set players(List<Player> players) => _players = players;
+
+  set rounds(List<Round> rounds) => _rounds = rounds;
 
   void setName(String name) {
     _name = name;
@@ -68,9 +87,19 @@ class Game with MyUtils {
 
     if (!playerNameFound) {
       var player = Player(playerName);
+      player.setColor(Colors.black);
       addPlayer(player);
     }
   }
+
+  //-----------------------------------------------------------------
+
+  void initFirstRound() {
+    Round firstRound = Round.blank();
+    firstRound.setPlayers(players);
+    _rounds.add(firstRound);
+  }
+
 
   //-----------------------------------------------------------------
 
@@ -105,6 +134,12 @@ class Game with MyUtils {
 
   List<String> getPlayerIds() {
     return players.map((p) => p.id).toList();
+  }
+
+  //-----------------------------------------------------------------
+
+  int numPlayers() {
+    return players.length;
   }
 
   //-----------------------------------------------------------------
@@ -144,6 +179,12 @@ class Game with MyUtils {
     // return totalScoresList;
   }
 
+  //-----------------------------------------------------------------
+
+  void record(){
+    debugMsg("game record");    
+  }
+  
   //-----------------------------------------------------------------
 
   void resetScores() {

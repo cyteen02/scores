@@ -14,11 +14,12 @@ import 'package:scores/mixin/my_utils.dart';
 import 'package:scores/models/game.dart';
 import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
+import 'package:scores/screens/list_games.dart';
 // import 'package:scores/models/player.dart';
 // import 'package:scores/models/round.dart';
 
 //import 'package:flutter/widget_previews.dart';
-import 'package:scores/screens/list_screen.dart';
+import 'package:scores/screens/list_rounds.dart';
 import 'package:scores/services/game_storage.dart';
 //import 'package:scores/extensions/color_extensions.dart';
 
@@ -34,9 +35,9 @@ class Scores extends StatefulWidget {
 }
 
 class _ScoresState extends State<Scores> with MyUtils {
-  Game game = Game('Rummy');
-  //    Game? game;
-  bool isLoading = true;
+  // Game game = Game('Rummy');
+  // //    Game? game;
+  // bool isLoading = true;
 
   //-----------------------------------------------------------------
 
@@ -45,12 +46,10 @@ class _ScoresState extends State<Scores> with MyUtils {
     debugMsg("_ScoresState initState");
     super.initState();
 
+    // Color c = Colors.red;
+    // debugMsg(c.toString(), true);
 
-    Color c = Colors.red;
-debugMsg(c.toString(),true);
-
-
-    loadGameData();
+    // loadGameData();
 
     // game.clear();
 
@@ -79,41 +78,39 @@ debugMsg(c.toString(),true);
   }
   //-----------------------------------------------------------------
 
-  Future<void> loadGameData() async {
-    debugMsg("_ScoresState loadGameData");
-    final GameStorage storage = GameStorage();
+  // Future<void> loadGameData() async {
+  //   debugMsg("_ScoresState loadGameData");
+  //   final GameStorage storage = GameStorage();
 
+  //   try {
+  //     game = await storage.loadGame();
 
-    try {
-      game = await storage.loadGame();
+  //     // game.clear();
 
-      // game.clear();
+  //     // game.name = "Rummy";
 
-      // game.name = "Rummy";
+  //     // Player player1 = Player('Paul');
+  //     // player1.setColor(Colors.red);
+  //     // game.addPlayer(player1);
 
-      // Player player1 = Player('Paul');
-      // player1.setColor(Colors.red);
-      // game.addPlayer(player1);
+  //     // Player player2 = Player('Jane');
+  //     // player2.setColor(Colors.blue);
+  //     // game.addPlayer(player2);
 
-      // Player player2 = Player('Jane');
-      // player2.setColor(Colors.blue);
-      // game.addPlayer(player2);
+  //     // Round round = Round(game.players);
+  //     // round.setScore(player1, 10);
+  //     // round.setScore(player2, 15);
+  //     // game.addRound(round);
 
-      // Round round = Round(game.players);
-      // round.setScore(player1, 10);
-      // round.setScore(player2, 15);
-      // game.addRound(round);
-
-      debugMsg("Game at this point is ${game.toString()}");
-
-    } catch (e) {
-      debugMsg("_ScoresState loadGameData ${e.toString()}", true);
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+  //     debugMsg("Game at this point is ${game.toString()}");
+  //   } catch (e) {
+  //     debugMsg("_ScoresState loadGameData ${e.toString()}", true);
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
 
   //-----------------------------------------------------------------
 
@@ -121,9 +118,9 @@ debugMsg(c.toString(),true);
   Widget build(BuildContext context) {
     debugMsg("_ScoresState build");
 
-    if (isLoading) {
-      return CircularProgressIndicator();
-    }
+    // if (isLoading) {
+    //   return CircularProgressIndicator();
+    // }
 
     //     return Text('Game: ${game?.name}');
     //   }
@@ -137,10 +134,11 @@ debugMsg(c.toString(),true);
     //     debugPrint(newGame.toString());
 
     return MaterialApp(
-      title: 'We are playing ${game.name}',
+//      title: 'We are playing ${game.name}',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       //      home: home(game),
-      home: ListScreen(game: game),
+//      home: ListRounds(game: game),
+      home: ListGames()
     );
   }
 
@@ -149,22 +147,8 @@ debugMsg(c.toString(),true);
   @override
   void dispose() {
     debugMsg("_ScoresState dispose");
-    saveGameData();
+    // saveGameData();
     super.dispose();
-  }
-
-  //-----------------------------------------------------------------
-
-  Future<void> saveGameData() async {
-    debugMsg("_ScoresState saveGameData");
-
-    final GameStorage storage = GameStorage();
-
-    try {
-      await storage.saveGame(game);
-    } catch (e) {
-      debugMsg(e.toString(), true);
-    }
   }
 
   //-----------------------------------------------------------------

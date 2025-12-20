@@ -21,21 +21,28 @@ import 'package:scores/models/round.dart';
 import 'package:scores/screens/add_round_screen.dart';
 import 'package:scores/services/game_storage.dart';
 
-class ListScreen extends StatefulWidget {
-  const ListScreen({super.key, required this.game});
+//---------------------------------------------------------------
+
+class ListRounds extends StatefulWidget {
+  const ListRounds({super.key, required this.game});
   final Game game;
 
   @override
-  State<ListScreen> createState() => _ListScreenState();
+  State<ListRounds> createState() => _ListRoundsState();
 }
 
 //---------------------------------------------------------------
 
-class _ListScreenState extends State<ListScreen> with MyUtils {
+class _ListRoundsState extends State<ListRounds> with MyUtils {
+  bool isLoading = true;
   int _bnbSelectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    //     if (isLoading) {
+    //   return CircularProgressIndicator();
+    // }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('We are playing ${widget.game.name}'),
@@ -57,6 +64,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
 
   //  @Preview(name: 'My Sample Text')
   Widget scoresList(Game game) {
+    debugMsg("scoresList game $game");
     List<Widget> rows = [];
 
     rows.add(playersRow(game.players));
@@ -78,6 +86,10 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
     List<Widget> playerNames = [];
 
     for (Player player in players) {
+      debugMsg(
+        "playersRow adding ${player.name} colour ${player.color} to the row",
+      );
+
       playerNames.add(
         MenuAnchor(
           style: MenuStyle(
@@ -155,8 +167,8 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
       context: context,
       builder: (context) {
         return AlertDialog(
-          //    AlertDialog(
           title: const Text('Enter Name'),
+          
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -166,6 +178,14 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
                 border: OutlineInputBorder(),
               ),
               autofocus: true,
+              
+              onFieldSubmitted: (value) {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(
+                    context,
+                  ).pop(controller.text); // Or whatever you need to do
+                }
+              },              
               validator: (value) {
                 debugMsg("Checking $value");
                 if (value == null || value.isEmpty) {
@@ -179,6 +199,7 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
               },
             ),
           ),
+          
           actions: [
             TextButton(
               child: const Text('Cancel'),
@@ -492,11 +513,38 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
 
         int? selectedNumber = await showNumberPicker(context);
 
-        //        MyUtils.showOkBox(context, "Error", "number $selectedNumber");
+        if (selectedNumber == null) return;
+
         debugMsg("selectedNumber $selectedNumber");
 
+        if (selectedNumber != game.numPlayers()) {
+          setState(() {
+            changeNumPlayers(game, selectedNumber);
+          });
+        }
+
+      case bnbGameEnd:
+        debugMsg("calling MyUtils.showDialogBox 1");
+
+        MyUtils.showDialogBox(
+          context,
+          "End Game",
+          "Confirm",
+          "Cancel",
+        ).then<int>((var r) {
+          debugMsg("showDialogBox returned $r");
+          if (r == 1) {
+            debugMsg("calling resetScores");
+            setState(() {
+              game.record();
+              game.resetScores();
+            });
+          }
+          return r;
+        });
+
       case bnbClear:
-        debugMsg("calling MyUtils.showDialogBox");
+        debugMsg("calling MyUtils.showDialogBox 2");
 
         MyUtils.showDialogBox(
           context,
@@ -559,4 +607,71 @@ class _ListScreenState extends State<ListScreen> with MyUtils {
   }
 
   //---------------------------------------------------------------
+
+  void changeNumPlayers(Game game, int newNumPlayers) async {
+    final firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Emma', 'Frank'];
+
+    debugMsg("changeNumPlayers newNumPlayers $newNumPlayers");
+
+    // Game? newGame;
+
+    //    newGame = await loadGameData(game.name, newNumPlayers);
+    // debugMsg("after loadGameData newGame $newGame");
+
+    // newGame ??= Game(game.name);
+
+    // debugMsg("newGame.numPlayers() ${newGame.numPlayers()}");
+    game.clear();
+    Game savedGame =
+        await loadGameData(game.name, newNumPlayers) ?? Game(game.name);
+
+    if (savedGame.numPlayers() == 0) {
+      // there's no saved game, so initialise
+      debugMsg("initilising new players");
+      for (int n = 0; n < newNumPlayers; n++) {
+        game.addPlayerByName(firstNames[n]);
+      }
+    } else {
+      debugMsg("using saved game data");
+      game.setPlayers(savedGame.players);
+      debugMsg("m2 game $game");
+      game.setRounds(savedGame.rounds);
+      debugMsg("m3 game $game");
+    }
+    debugMsg("m4 game $game");
+    //      newGame.initFirstRound();
+    // debugMsg("at the end newGame $newGame");
+
+    // game = newGame;
+
+    // game.setPlayers(newGame.players);
+    //    game.initFirstRound();
+
+    debugMsg("at the end game $game");
+  }
+
+  //---------------------------------------------------------------
+
+  Future<Game?> loadGameData(String gameName, int numPlayers) async {
+    debugMsg("_ScoresState loadGameData");
+    final GameStorage storage = GameStorage();
+
+    Game game = Game.empty();
+
+    try {
+      game = await storage.loadGame(gameName, numPlayers);
+
+      debugMsg("Game at this point is ${game.toString()}");
+    } catch (e) {
+      debugMsg("_ScoresState loadGameData ${e.toString()}", true);
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+
+    return game;
+  }
+
+  //-----------------------------------------------------------------
 }

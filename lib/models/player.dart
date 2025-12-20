@@ -13,12 +13,12 @@ class Player with MyUtils {
 
   // Constructors
   Player(String name) {
-    _id = uuid.v1();
+    _id = uuid.v1().substring(0,8);
     _name = name;
   }
 
   Player.blank() {
-    _id = uuid.v1();
+    _id = uuid.v1().substring(0,8);
   }
 
   // Getters
