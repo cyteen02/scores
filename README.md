@@ -14,3 +14,12 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+Terminology
+===========
+
+Game = the type/ruleset (Monopoly, Poker, etc.)
+Match = the specific instance with player scores
+Player = the people who play 
+Round = one round of a card game or one line on a scorecard

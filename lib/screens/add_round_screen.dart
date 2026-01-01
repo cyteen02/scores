@@ -10,20 +10,22 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/mixin/my_utils.dart';
-// import 'package:flutter/widget_previews.dart';
 
-import 'package:scores/models/game.dart';
+import 'package:scores/mixin/my_mixin.dart';
+import 'package:scores/utils/my_utils.dart';
+
+import 'package:scores/models/match.dart';
 import 'package:scores/models/player.dart';
 import 'package:scores/models/round.dart';
+
 
 //--------------------------------------------------------------
 
 class AddRoundScreen extends StatefulWidget {
-  final Game game;
+  final Match match;
   final Round? currentRound;
 
-  const AddRoundScreen({super.key, required this.game, this.currentRound});
+  const AddRoundScreen({super.key, required this.match, this.currentRound});
 
   @override
   State<AddRoundScreen> createState() => _AddRoundScreenState();
@@ -31,8 +33,8 @@ class AddRoundScreen extends StatefulWidget {
 
 //--------------------------------------------------------------
 
-class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
-  Round newRound = Round([]);
+class _AddRoundScreenState extends State<AddRoundScreen> with MyMixin {
+  Round newRound = Round();
   bool editExistingRound = true;
 
   @override
@@ -43,12 +45,12 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
 
     editExistingRound = (widget.currentRound != null);
 
-    debugMsg('Received: ${widget.game} editExistingRound $editExistingRound');
+    debugMsg('Received: ${widget.match} editExistingRound $editExistingRound');
 
     if (editExistingRound) {
       newRound = widget.currentRound!;
     } else {
-      newRound.setPlayers(widget.game.players);
+      newRound.setPlayers(widget.match.players);
     }
   }
 
@@ -66,12 +68,12 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
           IconButton(
             icon: Icon(Icons.check),
             onPressed: () {
-              savePressed(widget.game, newRound);
+              savePressed(widget.match, newRound);
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(child: addPlayerScores(widget.game)),
+      body: SingleChildScrollView(child: addPlayerScores(widget.match)),
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () {},
       //   child: Icon(Icons.add),
@@ -82,14 +84,11 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
 
   //--------------------------------------------------------------
 
-  Widget addPlayerScores(Game game) {
-    //    Round newRound = Round(game.players);
+  Widget addPlayerScores(Match match) {
+    
+        List<Widget> scoresRow = [];
 
-    //    Container c = Container();
-
-    List<Widget> scoresRow = [];
-
-    for (Player player in game.players) {
+    for (Player player in match.players) {
       scoresRow.add(addPlayerScore(newRound, player));
     }
     return Column(children: scoresRow);
@@ -98,13 +97,13 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
   //--------------------------------------------------------------
 
   Widget addPlayerScore(Round round, Player player) {
-    debugMsg("row for ${player.name} current ${round.getScore(player)}");
+    debugMsg("row for ${player.name()} current ${round.getScore(player)}");
     return Column(
       children: [
         Row(
           children: [
             Text(
-              player.name,
+              player.name(),
               style: TextStyle(color: player.color, fontSize: 30),
               textAlign: TextAlign.left,
             ),
@@ -169,7 +168,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
   //--------------------------------------------------------------
 
   void buttonPressed(Round round, Player player, int scoreButton) {
-    debugMsg("buttonPressed ${player.name} add score of $scoreButton");
+    debugMsg("buttonPressed ${player.name()} add score of $scoreButton");
 
     setState(() {
       debugMsg(round.toString());
@@ -180,9 +179,8 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyUtils {
 
   //--------------------------------------------------------------
 
-  void savePressed(Game game, Round newRound) {
+  void savePressed(Match match, Round newRound) {
     debugMsg("savePressed returning newRound $newRound");
-    //widget.game.addRound(newRound);
     Navigator.pop(context, newRound);
   }
 

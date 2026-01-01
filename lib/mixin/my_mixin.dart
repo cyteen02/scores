@@ -11,15 +11,7 @@
 
 import 'package:flutter/material.dart';
 
-mixin MyUtils {
-  void debugMsg(String msg, [bool box = false]) {
-    const String boxLine =
-        ">> ----------------------------------------------------------";
-
-    if (box) debugPrint(boxLine);
-    debugPrint(">> $msg");
-    if (box) debugPrint(boxLine);
-  }
+mixin MyMixin {
 
   //----------------------------------------------------------------
 

@@ -9,22 +9,25 @@
 *
 *----------------------------------------------------------------------------*/
 
-import 'package:scores/mixin/my_utils.dart';
-import 'package:scores/models/game.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'dart:convert';
+import 'package:scores/mixin/my_mixin.dart';
+import 'package:scores/utils/my_utils.dart';
+
+import 'package:scores/models/match.dart';
+
 
 //------------------------------------------------------------------
 
-class GameStorage with MyUtils {
+class MatchStorage with MyMixin {
   static const String lastGameNameKey = 'LAST-GAME-NAME';
   static const String lastNumPlayersKey = 'LAST-NUM_PLAYERS';
 
   //----------------------------------------------------------------
 
   Future<int> loadLastNumPlayers(String gameName) async {
-    debugMsg("GameStorage loadLastNumPlayers");
+    debugMsg("MatchStorage loadLastNumPlayers");
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -43,39 +46,39 @@ class GameStorage with MyUtils {
   }
   //----------------------------------------------------------------
 
-  Future<void> saveGame(Game game) async {
-    debugMsg("GameStorage saveGame $game");
+  Future<void> saveMatch(Match match) async {
+    debugMsg("MatchStorage saveMatch $match");
 
     final prefs = await SharedPreferences.getInstance();
 
-    String lastNumPlayersKey = "LAST-${game.name}-NUM-PLAYERS";
-    await prefs.setInt(lastNumPlayersKey, game.numPlayers());
+    String lastNumPlayersKey = "LAST-${match.name}-NUM-PLAYERS";
+    await prefs.setInt(lastNumPlayersKey, match.numPlayers());
 
-    String key = getStorageKey(game.name, game.numPlayers());
-    await prefs.setString(key, jsonEncode(game.toJson()));
+    String matchKey = getStorageKey(match.name, match.numPlayers());
+    await prefs.setString(matchKey, jsonEncode(match.toJson()));
   }
 
   //----------------------------------------------------------------
 
-  Future<Game> loadGame(String gameName, int numPlayers) async {
-    debugMsg("GameStorage loadGame gameName $gameName numPlayers $numPlayers");
+  Future<Match> loadMatch(String matchName, int numPlayers) async {
+    debugMsg("MatchStorage loadGame match $matchName numPlayers $numPlayers");
 
-    final key = getStorageKey(gameName, numPlayers);
+    final key = getStorageKey(matchName, numPlayers);
 
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(key);
 
-    debugMsg("GameStorage jsonString $jsonString");
+    debugMsg("MatchStorage jsonString $jsonString");
 
-    Game game;
+    Match match;
     if (jsonString == null) {
-      game = Game.empty();
+      match = Match.name(matchName);
     } else {
       final jsonMap = jsonDecode(jsonString);
-      game = Game.fromJson(jsonMap);
+      match = Match.fromJson(jsonMap);
     }
-    debugMsg("loaded game $game");
-    return game;
+    debugMsg("loaded match $match");
+    return match;
   }
 
   //----------------------------------------------------------------
@@ -84,4 +87,9 @@ class GameStorage with MyUtils {
   //   final prefs = await SharedPreferences.getInstance();
   //   await prefs.remove(_key);
   // }
+
+  Future<void> resetStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
 }

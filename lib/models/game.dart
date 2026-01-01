@@ -9,263 +9,106 @@
 *
 *----------------------------------------------------------------------------*/
 
-import 'package:flutter/material.dart';
-import 'package:scores/mixin/my_utils.dart';
-import 'package:scores/models/player.dart';
-import 'package:scores/models/round.dart';
-import 'package:uuid/uuid.dart';
+import 'package:scores/mixin/my_mixin.dart';
 
-const uuid = Uuid();
+enum ShowFutureRoundsType {
+  showNoFutureRounds('Don\'t show future rounds'),
+  showNextFutureRound('Show next round only'),
+  showAllFutureRounds('Show all future rounds');
 
-class Game with MyUtils {
-  String _id = "";
-  String _name = "";
-  List<Player> _players = <Player>[];
-  List<Round> _rounds = <Round>[];
+  final String description;
+  const ShowFutureRoundsType(this.description);
+}
+
+enum WinCondition {
+  highestScore('Highest Score'),
+  lowestScore('Lowest Score');
+
+  final String description;
+  const WinCondition(this.description);
+}
+
+class Game with MyMixin {
+  int? id;
+  String name = "";
+  List<String> roundList = <String>[];
+  ShowFutureRoundsType showFutureRoundsType =
+      ShowFutureRoundsType.showNoFutureRounds;
+  WinCondition winCondition = WinCondition.highestScore;
+
+  //   GameType({required this.name});
+
+  // String get name => name;
+  // List<String> get roundList => roundList;
 
   // Constructor
-  Game(String name) {
-    _id = uuid.v1().substring(0,8);
-    _name = name;
+  Game() {
+    winCondition = WinCondition.highestScore;
   }
 
-  Game.empty() {
-    _id = uuid.v1().substring(0,8);
+  Game.name(String name) {
+    name = name;
+    winCondition = WinCondition.highestScore;
   }
 
-  // getters
-  String get name => _name;
+//-----------------------------------------------------------------
 
-  List<Player> get players => _players;
-
-  List<Round> get rounds => _rounds;
-
-  // Setters
-
-  set name(String name) => _name = name;
-
-  void setPlayers(List<Player> players ) {
-    debugMsg("Game setPlayers $players");
-    for (int p = 0 ; p < players.length ; p ++) {
-      _players.add(players[p]);
-    }
+  Game.id(int id) {
+    id = id;
+    winCondition = WinCondition.highestScore;
   }
 
-  void setRounds(List<Round> rounds ) {
-    debugMsg("Game setRounds $rounds");    
-    for (int r = 0 ; r < rounds.length ; r ++) {
-      _rounds.add(rounds[r]);
-    }
+//-----------------------------------------------------------------
+
+  // int? get id => id;
+
+  // set id(int id) => _id = id;
+
+//-----------------------------------------------------------------
+
+  bool fixedNumRounds() {
+    return showFutureRoundsType !=
+            ShowFutureRoundsType.showNoFutureRounds;
   }
+//-----------------------------------------------------------------
 
-  set players(List<Player> players) => _players = players;
+bool useRoundLabels(){
+  return roundList.isNotEmpty;
+}
 
-  set rounds(List<Round> rounds) => _rounds = rounds;
-
-  void setName(String name) {
-    _name = name;
-  }
-
-  //-----------------------------------------------------------------
-
-  void addPlayer(Player player) {
-    _players.add(player);
-  }
-
-  //-----------------------------------------------------------------
-
-  bool playerNameExists(String playerName) {
-    return players.any((p) => p.name == playerName);
-  }
-  //-----------------------------------------------------------------
-
-  void addPlayerByName(String playerName) {
-    bool playerNameFound = false;
-    for (Player p in players) {
-      playerNameFound = playerNameFound | (p.name == playerName);
-    }
-
-    if (!playerNameFound) {
-      var player = Player(playerName);
-      player.setColor(Colors.black);
-      addPlayer(player);
-    }
-  }
-
-  //-----------------------------------------------------------------
-
-  void initFirstRound() {
-    Round firstRound = Round.blank();
-    firstRound.setPlayers(players);
-    _rounds.add(firstRound);
-  }
-
-
-  //-----------------------------------------------------------------
-
-  void addRound(Round round) {
-    _rounds.add(round);
-  }
-
-  //-----------------------------------------------------------------
-
-  Player? getPlayerByName(String playerName) {
-    return players.cast<Player?>().firstWhere(
-      (p) => p?.name == playerName,
-      orElse: () => null,
-    );
-  }
-  //-----------------------------------------------------------------
-
-  Player? getPlayerById(String playerId) {
-    return players.cast<Player?>().firstWhere(
-      (p) => p?.id == playerId,
-      orElse: () => null,
-    );
-  }
-
-  //-----------------------------------------------------------------
-
-  List<String> getPlayerNames() {
-    return players.map((p) => p.name).toList();
-  }
-
-  //-----------------------------------------------------------------
-
-  List<String> getPlayerIds() {
-    return players.map((p) => p.id).toList();
-  }
-
-  //-----------------------------------------------------------------
-
-  int numPlayers() {
-    return players.length;
-  }
-
-  //-----------------------------------------------------------------
-
-  List<int> getTotalScores() {
-    debugMsg("Game getTotalScores");
-
-    Map<String, int> totalScores = {};
-
-    for (Round round in rounds) {
-      for (String playerId in round.getPlayerIds()) {
-        // int prevScore = totalScores[playerName] ?? 0;
-        // print(">> prevScore $prevScore");
-
-        int thisScore = round.getScoreById(playerId) ?? 0;
-        // print(">> thisScore $thisScore");
-
-        // int newScore = prevScore + thisScore;
-
-        // print(">> newScore $newScore");
-
-        totalScores[playerId] = (totalScores[playerId] ?? 0) + thisScore;
-        //        totalScores.update(playerName, (value) => newScore, ifAbsent: () => 0 );
-      }
-    }
-
-    return totalScores.values.toList();
-
-    //-----------------------------------------------------------------
-
-    // List<int> totalScoresList = [];
-
-    // totalScores.forEach((player, score) {
-    //   totalScoresList.add(totalScores[player] ?? 0);
-    // });
-
-    // return totalScoresList;
-  }
-
-  //-----------------------------------------------------------------
-
-  void record(){
-    debugMsg("game record");    
-  }
-  
-  //-----------------------------------------------------------------
-
-  void resetScores() {
-    debugMsg("game resetScores");
-    _rounds.clear();
-  }
-
-  //-----------------------------------------------------------------
-
-  void clear() {
-    debugMsg("game clear");
-    _players.clear();
-    _rounds.clear();
-  }
-
-  //-----------------------------------------------------------------
-
-  // Convert to JSON
-  Map<String, dynamic> toJson() {
-    debugMsg("Game toJson");
-
-    Map<String, dynamic> jsonString;
-
-    jsonString = {
-      'id': _id,
-      'name': _name,
-      'players': _players.map((player) => player.toJson()).toList(),
-      'rounds': _rounds.map((round) => round.toJson()).toList(),
+//-----------------------------------------------------------------
+  // Convert Game to Map for database storage
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'roundList': roundList.join(','), // Store as csv
+      'showFutureRoundsType': showFutureRoundsType.name,
+      'winCondition': winCondition.name,
     };
-
-    debugMsg(jsonString.toString(), true);
-    return jsonString;
   }
 
-  //-----------------------------------------------------------------
+//-----------------------------------------------------------------
 
-  // Create from JSON
-  factory Game.fromJson(Map<String, dynamic> json) {
-    Game game = Game.empty();
-    game._id = json['id'];
-    game._name = json['name'];
-    game._players =
-        (json['players'] as List?)
-            ?.map((playerJson) => Player.fromJson(playerJson))
-            .toList() ??
-        <Player>[];
-    game._rounds =
-        (json['rounds'] as List?)
-            ?.map((roundJson) => Round.fromJson(roundJson))
-            .toList() ??
-        <Round>[];
-
-    print("++++++++++++++++++++++++++++++++++++++++");
-    print(game.toString());
-    print("++++++++++++++++++++++++++++++++++++++++");
-
-    return game;
+  // Create Game from Map when reading from database
+  factory Game.fromMap(Map<String, dynamic> map) {
+    return Game()
+      ..id = map['id']
+      ..name = map['name']
+      ..roundList = (map['roundList'] as String).isEmpty
+          ? []
+          : (map['roundList'] as String).split(',')
+      ..showFutureRoundsType = ShowFutureRoundsType.values.byName(
+        map['showFutureRoundsType'],
+      )
+      ..winCondition = WinCondition.values.byName(map['winCondition']);
   }
 
-  //-----------------------------------------------------------------
+//-----------------------------------------------------------------
 
   @override
   String toString() {
-    StringBuffer buffer = StringBuffer();
-
-    buffer.write("Game id $_id name:$_name");
-
-    buffer.write(" Players[");
-    for (var player in players) {
-      buffer.write(" ");
-      buffer.write(player.toString());
-    }
-    buffer.write("] Rounds[");
-
-    for (var round in rounds) {
-      buffer.write(" ");
-      buffer.write(round.toString());
-    }
-    buffer.write("]");
-
-    return buffer.toString();
+    return "id $id name $name ${roundList.toString()} showFutureRoundsType $showFutureRoundsType winCondition $winCondition";
   }
 
   //-----------------------------------------------------------------

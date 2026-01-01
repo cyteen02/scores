@@ -10,17 +10,19 @@
 *-------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/mixin/my_utils.dart';
-import 'package:scores/models/game.dart';
-import 'package:scores/models/player.dart';
-import 'package:scores/models/round.dart';
-import 'package:scores/screens/list_games.dart';
+import 'package:scores/mixin/my_mixin.dart';
+import 'package:scores/utils/my_utils.dart';
+
+// import 'package:scores/models/game.dart';
+// import 'package:scores/models/player.dart';
+// import 'package:scores/models/round.dart';
+import 'package:scores/screens/main_menu_screen.dart';
 // import 'package:scores/models/player.dart';
 // import 'package:scores/models/round.dart';
 
 //import 'package:flutter/widget_previews.dart';
-import 'package:scores/screens/list_rounds.dart';
-import 'package:scores/services/game_storage.dart';
+// import 'package:scores/screens/list_rounds.dart';
+// import 'package:scores/services/game_storage.dart';
 //import 'package:scores/extensions/color_extensions.dart';
 
 void main() {
@@ -34,7 +36,7 @@ class Scores extends StatefulWidget {
   State<Scores> createState() => _ScoresState();
 }
 
-class _ScoresState extends State<Scores> with MyUtils {
+class _ScoresState extends State<Scores> with MyMixin {
   // Game game = Game('Rummy');
   // //    Game? game;
   // bool isLoading = true;
@@ -135,10 +137,12 @@ class _ScoresState extends State<Scores> with MyUtils {
 
     return MaterialApp(
 //      title: 'We are playing ${game.name}',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
+      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ),
+
       //      home: home(game),
 //      home: ListRounds(game: game),
-      home: ListGames()
+      home: MainMenu()
     );
   }
 

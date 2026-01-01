@@ -1,39 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:scores/mixin/my_utils.dart';
+
+import 'package:scores/mixin/my_mixin.dart';
+import 'package:scores/utils/my_utils.dart';
 import 'package:scores/extensions/color_extensions.dart';
-import 'package:uuid/uuid.dart';
 
-const uuid = Uuid();
-
-class Player with MyUtils {
-  String _id = "";
+class Player with MyMixin {
+  int? id;
   String _name = "";
   int _color = 0;
-  //  Color _color = Colors.black;
+  String? _photoPath;
+
 
   // Constructors
-  Player(String name) {
-    _id = uuid.v1().substring(0,8);
+
+//   Player({
+//     required this.name,
+//     required this.favouriteColour,
+//     this.photoPath,
+//   });
+
+
+Player();
+
+  Player.name(String name) {
     _name = name;
   }
 
-  Player.blank() {
-    _id = uuid.v1().substring(0,8);
-  }
+  Player.id(int this.id);
 
   // Getters
-  String get name => _name;
+  String name() => _name;
 
-  String get id => _id;
+//  int? get id => id;
 
   Color get color {
     return _color.toColor();
   }
 
+  String? get photoPath => _photoPath;
+
   // Setters
 
-  set name(String name) => _name = name;
+//  set id(int id) => this.id = id;
 
+  // set name(String name) {
+  //   _name = name;
+  // }
+
+  set photoPath(String photoPath) => _photoPath = photoPath;
+  
   void setName(String name) {
     debugMsg("Player setName from $_name to $name");
     _name = name;
@@ -45,7 +60,7 @@ class Player with MyUtils {
   Map<String, dynamic> toJson() {
     debugMsg("Player toJson");
     return {
-      'id': _id,
+      'id': id,
       'name': _name,
       'color': _color, // Store color as integer
     };
@@ -53,16 +68,34 @@ class Player with MyUtils {
 
   // Create from JSON
   factory Player.fromJson(Map<String, dynamic> json) {
-    Player player = Player.blank();
-    player._id = json['id'] ?? '';
+    Player player = Player();
+    player.id = json['id'] ?? '';
     player._name = json['name'] ?? '';
     player._color = (json['color'] ?? 0);
     return player;
   }
 
+
+Map<String, dynamic> toMap() {
+  return {
+    'id': id,
+    'name': _name,
+    'color': _color,
+    'photoPath': _photoPath,
+  };
+}
+
+factory Player.fromMap(Map<String, dynamic> map) {
+  return Player()
+    ..id = map['id']
+    .._name = map['name']
+    .._color = map['color']
+    .._photoPath = map['photoPath'];
+}
+
   // Methods
   @override
   String toString() {
-    return "Id $_id Name: $_name";
+    return "Id $id Name: $_name";
   }
 }
