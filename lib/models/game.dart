@@ -67,8 +67,9 @@ class Game with MyMixin {
 //-----------------------------------------------------------------
 
   bool fixedNumRounds() {
-    return showFutureRoundsType !=
-            ShowFutureRoundsType.showNoFutureRounds;
+    return roundList.isNotEmpty;
+    // return showFutureRoundsType !=
+    //         ShowFutureRoundsType.showNoFutureRounds;
   }
 //-----------------------------------------------------------------
 

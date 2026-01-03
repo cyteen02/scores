@@ -13,10 +13,13 @@ import 'package:flutter/material.dart';
 import 'package:scores/database/player_repository.dart';
 
 import 'package:scores/dialogs/change_player_colour.dart';
-//import 'package:scores/dialogs/change_player_name.dart';
 
 import 'package:scores/mixin/my_mixin.dart';
-import 'package:scores/screens/end_game_screen.dart';
+import 'package:scores/screens/dialogs/pick_multiple_players_dialog.dart';
+import 'package:scores/screens/dialogs/pick_num_players.dart';
+import 'package:scores/screens/dialogs/pick_one_player_dialog.dart';
+import 'package:scores/screens/end_match_screen.dart';
+import 'package:scores/screens/widgets/list_rounds_bottom_nav_bar.dart';
 import 'package:scores/utils/my_utils.dart';
 
 import 'package:scores/models/match.dart';
@@ -38,9 +41,21 @@ class ListRounds extends StatefulWidget {
 
 //---------------------------------------------------------------
 
+// each row on the screen is a round in the match
+// build the rows with this class
+// This helps keep the labels separate from the row data
+class RoundRow {
+  final String? label; // null if no leading number
+  final Widget row; // The actual row content
+
+  RoundRow({this.label, required this.row});
+}
+
+//-----------------------------------------------------------------
+
 class _ListRoundsState extends State<ListRounds> with MyMixin {
   bool isLoading = true;
-  int _bnbSelectedIndex = 0;
+//  int _bnbSelectedIndex = 0;
   late Match match;
   late Game game;
   //  int _counter = 0;
@@ -80,12 +95,14 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     //   return CircularProgressIndicator();
     // }
 
+    // ignore: no_leading_underscores_for_local_identifiers
+    int _bottomNavBarSelection = 0;
     return Scaffold(
       appBar: AppBar(
         title: Text('We are playing ${match.name}'),
         centerTitle: true,
       ),
-      body: Container(child: listRounds(match)),
+      body: Container(child: listRounds(context, match)),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (match.players.isNotEmpty) {
@@ -96,21 +113,24 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         child: Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: bottomNavigationBar(match),
+      bottomNavigationBar: ListRoundsBottomNavBar(
+        currentIndex: _bottomNavBarSelection,
+        onItemTapped: _bottomNavBarOnTapped,
+        match: match,
+      ),
     );
   }
 
   //---------------------------------------------------------------
 
-  Widget listRounds(Match match) {
+  Widget listRounds(BuildContext context, match) {
     debugMsg("listRounds match $match");
 
     // Build a list of rows to display
     List<RoundRow> rows = [];
 
     if (match.players.isNotEmpty) {
-      rows.add(playersRow(match.players));
-      rows.add(totalScoresRow(match));
+      rows.add(playersRow(context, match.players));
     } else {
       rows.add(RoundRow(row: Center(child: Text("Add some players"))));
     }
@@ -120,7 +140,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       if (match.game.useRoundLabels()) {
         roundLabel = match.game.roundList[r];
       }
-      rows.add(roundScoresRow(match, roundLabel, match.rounds[r]));
+      rows.add(roundScoresRow(context, match, roundLabel, match.rounds[r]));
     }
 
     if ((match.showFutureRoundsType() !=
@@ -150,29 +170,34 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         index < match.game.roundList.length;
         index++
       ) {
-        rows.add(futureRoundsRow(match, match.game.roundList[index]));
+        rows.add(futureRoundsRow(context, match, match.game.roundList[index]));
       }
+    }
+
+    if (match.players.isNotEmpty) {
+      rows.add(RoundRow(row: SizedBox(height: 30)));
+      rows.add(totalScoresRow(match));
     }
 
     return ListView.builder(
       itemCount: rows.length,
-      itemBuilder: (BuildContext context, int index) {
+      itemBuilder: (BuildContext newContext, int index) {
         Widget label = roundLabelAvatar(
           "",
-          Theme.of(context).colorScheme.surface,
+          Theme.of(newContext).colorScheme.surface,
         );
 
         if (match.useRoundLabels()) {
           label = rows[index].label != null
               ? roundLabelAvatar(rows[index].label ?? "", Colors.blue)
-              : roundLabelAvatar("", Theme.of(context).colorScheme.surface);
+              : roundLabelAvatar("", Theme.of(newContext).colorScheme.surface);
         }
 
         return Container(
           key: Key("Row $index"),
           padding: EdgeInsets.zero,
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.green, width: 1.0)),
+            border: Border(bottom: BorderSide(color: Colors.grey, width: 1.0)),
           ),
           child: Row(
             children: [
@@ -184,14 +209,15 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       },
     );
   }
+
   //---------------------------------------------------------------
 
-  RoundRow playersRow(List<Player> players) {
+  RoundRow playersRow(BuildContext context, List<Player> players) {
     List<Widget> playerNames = [];
 
     for (Player player in players) {
       debugMsg(
-        "playersRow adding ${player.name()} colour ${player.color} to the row",
+        "playersRow adding ${player.name} colour ${player.color} to the row",
       );
 
       playerNames.add(
@@ -200,7 +226,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
             backgroundColor: WidgetStateProperty.all(Colors.white),
             elevation: WidgetStateProperty.all(4),
           ),
-          builder: (context, controller, child) {
+          builder: (BuildContext newContext, controller, child) {
             return InkWell(
               onTap: () {
                 if (controller.isOpen) {
@@ -212,7 +238,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  player.name(),
+                  player.name,
                   style: TextStyle(color: player.color, fontSize: 30),
                   textAlign: TextAlign.center,
                 ),
@@ -226,7 +252,6 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
               onPressed: () async {
                 if (await changePlayer(context, match, player)) {
                   saveGameState();
-                  //                  setState(() {});
                 }
               },
             ),
@@ -235,12 +260,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
               onPressed: () async {
                 if (await changePlayerColour(context, player) == true) {
                   saveGameState();
-                  //                  setState(() {});
                 }
-
-                // setState(() {
-                //   changePlayerColour(player);
-                // });
               },
             ),
           ],
@@ -248,7 +268,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       );
     }
 
-        return RoundRow(row: listToRowWithDividers(playerNames));
+    return RoundRow(row: listToRowWithDividers(playerNames));
   }
 
   //---------------------------------------------------------------
@@ -282,12 +302,11 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       );
     }
     return RoundRow(row: listToRowWithDividers(totalScoreTexts));
-
   }
 
   //---------------------------------------------------------------
 
-  RoundRow futureRoundsRow(Match match, String roundLabel) {
+  RoundRow futureRoundsRow(BuildContext context, match, String roundLabel) {
     debugMsg("scoresRow");
 
     // return one row showing a round to come, with the label
@@ -307,7 +326,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         child: const Icon(Icons.delete, color: Colors.white, size: 32),
       ),
       confirmDismiss: (direction) async {
-        return await _confirmDelete(match, round);
+        return await _confirmDelete(context, match, round);
       },
       onDismissed: (direction) {
         _deleteRound(match, round);
@@ -323,7 +342,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
           //     : null,
           title: Text(""),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => _editRound(match, round),
+          onTap: () => _editRound(context, match, round),
         ),
       ),
     );
@@ -333,7 +352,12 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //---------------------------------------------------------------
 
-  RoundRow roundScoresRow(Match match, String roundLabel, Round round) {
+  RoundRow roundScoresRow(
+    BuildContext context,
+    Match match,
+    String roundLabel,
+    Round round,
+  ) {
     debugMsg("roundScoresRow");
 
     // return one row showing scores for all the players in this round
@@ -353,7 +377,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
           child: const Icon(Icons.delete, color: Colors.white, size: 32),
         ),
         confirmDismiss: (direction) async {
-          return await _confirmDelete(match, round);
+          return await _confirmDelete(context, match, round);
         },
         onDismissed: (direction) {
           _deleteRound(match, round);
@@ -363,7 +387,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         child: InkWell(
           child: IntrinsicHeight(child: scoresRow2(match, roundLabel, round)),
 
-          onTap: () => _editRound(match, round),
+          onTap: () => _editRound(context, match, round),
         ),
       ),
     );
@@ -426,42 +450,61 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   }
 
   //---------------------------------------------------------------
-  Future<dynamic> _confirmDelete(Match match, Round round) async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Roudn'),
-          content: Text('Are you sure you want to delete ${round.id}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('CANCEL'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteRound(match, round);
-              },
-              child: const Text('DELETE', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
+
+  Future<dynamic> _confirmDelete(
+    BuildContext context,
+    Match match,
+    Round round,
+  ) async {
+  
+    return await MyMixin.showDialogBox(
+      context,
+      "Delete round?",
+      "Confirm",
+      "Cancel",
+    ) == 1;
   }
+
+  //---------------------------------------------------------------
+
+  // Future<dynamic> _confirmDelete3(
+  //   BuildContext context,
+  //   Match match,
+  //   Round round,
+  // ) async {
+  //   return showDialog(
+  //     context: context,
+  //     builder: (BuildContext newContext) {
+  //       return AlertDialog(
+  //         title: const Text('Delete Round'),
+  //         content: Text('Are you sure you want to delete ${round.id}?'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(newContext).pop(),
+  //             child: const Text('CANCEL'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(newContext).pop();
+  //               _deleteRound(match, round);
+  //             },
+  //             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   //------------------------------------------------------------------
 
   Widget scoresRow2(Match match, String roundLabel, Round round) {
     debugMsg("scoresRow2");
 
-
     List<Widget> textItems = [];
     final scoresList = round.getScores();
 
-    for ( var item = 0 ; item < scoresList.length ; item++){  
-
+    for (var item = 0; item < scoresList.length; item++) {
       textItems.add(
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -478,25 +521,21 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //---------------------------------------------------------------
 
-  Widget listToRowWithDividers(List<Widget> textItems) 
-  {
+  Widget listToRowWithDividers(List<Widget> textItems) {
     List<Widget> rowChildren = [];
 
-    for ( var item = 0 ; item < textItems.length ; item++) 
-    {
-
+    for (var item = 0; item < textItems.length; item++) {
       // add dividers, but not straight after the first
       // column with roundlabels
-    
-      if ( ( match.getPlayerIds().length > 1 ) &
-           ( item > 0 ) ) {
-          rowChildren.add(
-            VerticalDivider(width: 1, thickness: 1, color: Colors.grey)          );
+
+      if ((match.getPlayerIds().length > 1) & (item > 0)) {
+        rowChildren.add(
+          VerticalDivider(width: 1, thickness: 1, color: Colors.grey),
+        );
       }
 
       rowChildren.add(Expanded(child: textItems[item]));
     }
-
 
     // for (Widget item in textItems) {
     //   if (item is VerticalDivider) {
@@ -510,8 +549,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     //     );
     //   }
     // }
-    return IntrinsicHeight(child: 
-    Row(children: rowChildren));
+    return IntrinsicHeight(child: Row(children: rowChildren));
   }
 
   //---------------------------------------------------------------
@@ -549,7 +587,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //--------------------------------------------------------------
 
-  void _editRound(Match match, Round round) async {
+  void _editRound(BuildContext context, Match match, Round round) async {
     final index = match.rounds.indexWhere((r) => r == round);
 
     debugMsg("editing round index $index");
@@ -660,7 +698,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
     String winnerText;
     if (winningPlayers.length == 1) {
-      winnerText = "The End - ${winningPlayers[0].name()} has won!";
+      winnerText = "The End - ${winningPlayers[0].name} has won!";
     } else {
       winnerText = "The End - a draw!";
     }
@@ -670,47 +708,56 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //---------------------------------------------------------------
 
-  static const bnbNumPlayers = 0;
-  static const bnbMatchEnd = 1;
-  static const bnbClear = 2;
+  // static const bnbNumPlayers = 0;
+  // static const bnbMatchEnd = 1;
+  // static const bnbClear = 2;
 
-  BottomNavigationBar bottomNavigationBar(Match match) {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Players'),
-        BottomNavigationBarItem(icon: Icon(Icons.save), label: 'The End'),
-        BottomNavigationBarItem(icon: Icon(Icons.clear), label: 'Clear'),
-      ],
-      currentIndex: _bnbSelectedIndex,
-      selectedItemColor: Colors.blue,
-      onTap: ((int index) {
-        setState(() {
-          _onItemTapped(index, match);
-        });
-      }),
-    );
-  }
+  // BottomNavigationBar bottomNavigationBar(BuildContext context, match) {
+  //   return BottomNavigationBar(
+  //     items: const <BottomNavigationBarItem>[
+  //       BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Players'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.save), label: 'The End'),
+  //       BottomNavigationBarItem(icon: Icon(Icons.clear), label: 'Clear'),
+  //     ],
+  //     currentIndex: _bnbSelectedIndex,
+  //     selectedItemColor: Colors.blue,
+  //     onTap: ((int index) {
+  //       setState(() {
+  //         _bottomNavBarOnTapped(context, index, match);
+  //       });
+  //     }),
+  //   );
+  // }
 
   //---------------------------------------------------------------
 
-  void _onItemTapped(int index, Match match) async {
+  void _bottomNavBarOnTapped(
+    BuildContext context,
+    int index,
+    Match match,
+  ) async {
     debugMsg("_onItemTapped index $index");
 
-    switch (index) {
-      case bnbNumPlayers:
-        debugMsg("calling showNumberPicker");
+    ListRoundsBottomNavBarEnum buttonTapped =
+        ListRoundsBottomNavBarEnum.values[index];
 
-        int? selectedNumber = await showNumberPicker(context);
+    switch (buttonTapped) {
+      case ListRoundsBottomNavBarEnum.players:
+        debugMsg("calling pickNumPlayers");
 
-        if (selectedNumber == null) return;
+        int selectedNumber = await pickNumPlayers(context) ?? 0;
+
+        if ((selectedNumber) == 0) return;
 
         debugMsg("selectedNumber $selectedNumber");
 
         if (selectedNumber != match.numPlayers()) {
-          match = await changeNumPlayers(match, selectedNumber);
+          if (context.mounted) {
+            match = await changeNumPlayers(context, match, selectedNumber);
+          }
         }
 
-      case bnbMatchEnd:
+      case ListRoundsBottomNavBarEnum.end:
         debugMsg("calling MyUtils.showDialogBox 1");
 
         MyMixin.showDialogBox(
@@ -721,23 +768,20 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         ).then<int>((var r) {
           debugMsg("showDialogBox returned $r");
           if (r == 1) {
-            debugMsg("calling resetScores");
-            setState(() async {
-              // game.record();
-              // game.resetScores();
-
-              await Navigator.push(
+            debugMsg("go to EndMatchScreen");
+            if (context.mounted) {
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => EndMatchScreen(match: match),
                 ),
               );
-            });
+            }
           }
           return r;
         });
 
-      case bnbClear:
+      case ListRoundsBottomNavBarEnum.clear:
         debugMsg("calling MyUtils.showDialogBox 2");
 
         MyMixin.showDialogBox(
@@ -758,47 +802,47 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         });
 
         break;
-      default:
     }
-    setState(() {
-      _bnbSelectedIndex = index;
-    });
+    // setState(() {
+    //   _bnbSelectedIndex = index;
+    // });
   }
 
   //---------------------------------------------------------------
 
-  Future<int?> showNumberPicker(BuildContext context) async {
-    return showDialog<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Number of players'),
-          content: SizedBox(
-            width: double.minPositive,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: 8,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('${index + 1}'),
-                  onTap: () {
-                    debugMsg("onTap index $index");
-                    Navigator.of(context).pop(index + 1);
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Future<int?> showNumberPicker(BuildContext context) async {
+
+  //   return showDialog<int>(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Number of players'),
+  //         content: SizedBox(
+  //           width: double.minPositive,
+  //           child: ListView.builder(
+  //             shrinkWrap: true,
+  //             itemCount: 8,
+  //             itemBuilder: (context, index) {
+  //               return ListTile(
+  //                 title: Text('${index + 1}'),
+  //                 onTap: () {
+  //                   debugMsg("onTap index $index");
+  //                   Navigator.of(context).pop(index + 1);
+  //                 },
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('Cancel'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   //---------------------------------------------------------------
 
@@ -812,20 +856,19 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     final playerRespository = PlayerRepository();
     List<Player> allPlayersList = await playerRespository.getAllPlayers();
 
-    // remove the existing players
-
+    // remove the existing players from the list to pick from
     for (Player p in match.players) {
-      allPlayersList.removeWhere((player) => player.name() == p.name());
+      allPlayersList.removeWhere((player) => player.name == p.name);
     }
 
     if (context.mounted) {
-      int? newPlayerIndex = await showPlayerPicker(context, allPlayersList);
+      int? newPlayerIndex = await pickOnePlayer(context, allPlayersList);
 
       if (newPlayerIndex == null) {
         return false;
       }
 
-      if (oldPlayer.name() == allPlayersList[newPlayerIndex].name()) {
+      if (oldPlayer.name == allPlayersList[newPlayerIndex].name) {
         return false;
       }
 
@@ -836,48 +879,52 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //---------------------------------------------------------------
 
-  Future<int?> showPlayerPicker(
-    BuildContext context,
-    List<Player> playersList,
-  ) async {
-    return showDialog<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Pick a player'),
-          content: SizedBox(
-            width: double.minPositive,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: playersList.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(
-                    playersList[index].name(),
-                    style: TextStyle(color: playersList[index].color),
-                  ),
-                  onTap: () {
-                    debugMsg("showPlayerPicker onTap index $index");
-                    Navigator.of(context).pop(index);
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // Future<int?> showPlayerPicker(
+  //   BuildContext context,
+  //   List<Player> playersList,
+  // ) async {
+  //   return showDialog<int>(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Pick a player'),
+  //         content: SizedBox(
+  //           width: double.minPositive,
+  //           child: ListView.builder(
+  //             shrinkWrap: true,
+  //             itemCount: playersList.length,
+  //             itemBuilder: (context, index) {
+  //               return ListTile(
+  //                 title: Text(
+  //                   playersList[index].name(),
+  //                   style: TextStyle(color: playersList[index].color),
+  //                 ),
+  //                 onTap: () {
+  //                   debugMsg("showPlayerPicker onTap index $index");
+  //                   Navigator.of(context).pop(index);
+  //                 },
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('Cancel'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   //---------------------------------------------------------------
 
-  Future<Match> changeNumPlayers(Match match, int newNumPlayers) async {
+  Future<Match> changeNumPlayers(
+    BuildContext context,
+    match,
+    int newNumPlayers,
+  ) async {
     debugMsg("changeNumPlayers newNumPlayers $newNumPlayers");
 
     match.clear();
@@ -890,8 +937,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       final playerRespository = PlayerRepository();
       List<Player> allPlayers = await playerRespository.getAllPlayers();
 
-      if (mounted) {
-        final newPlayers = await showPlayerSelectionDialog(
+      if (context.mounted) {
+        final newPlayers = await pickMultiplePlayersDialog(
           context,
           allPlayers,
           newNumPlayers,
@@ -923,81 +970,81 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //---------------------------------------------------------------
 
-  Future<List<Player>> showPlayerSelectionDialog(
-    BuildContext context,
-    List<Player> allPlayers,
-    int numPlayersRequired,
-  ) async {
-    List<Player> selectedPlayers = [];
+  // Future<List<Player>> showPlayerSelectionDialog(
+  //   BuildContext context,
+  //   List<Player> allPlayers,
+  //   int numPlayersRequired,
+  // ) async {
+  //   List<Player> selectedPlayers = [];
 
-    return await showDialog<List<Player>>(
-          context: context,
-          builder: (BuildContext context) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                final canConfirm = selectedPlayers.length == numPlayersRequired;
+  //   return await showDialog<List<Player>>(
+  //         context: context,
+  //         builder: (BuildContext context) {
+  //           return StatefulBuilder(
+  //             builder: (context, setState) {
+  //               final canConfirm = selectedPlayers.length == numPlayersRequired;
 
-                return AlertDialog(
-                  title: Text('Select $numPlayersRequired Players'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Selected: ${selectedPlayers.length} / $numPlayersRequired',
-                        style: TextStyle(
-                          color: canConfirm ? Colors.green : Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: allPlayers.map((player) {
-                              final isSelected = selectedPlayers.contains(
-                                player,
-                              );
-                              return CheckboxListTile(
-                                title: Text(player.name()),
-                                value: isSelected,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      selectedPlayers.add(player);
-                                    } else {
-                                      selectedPlayers.remove(player);
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: (() {
-                        selectedPlayers.clear();
-                        Navigator.pop(context, selectedPlayers);
-                      }),
-                      child: Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: canConfirm
-                          ? () => Navigator.pop(context, selectedPlayers)
-                          : null,
-                      child: Text('OK'),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ) ??
-        [];
-  }
+  //               return AlertDialog(
+  //                 title: Text('Select $numPlayersRequired Players'),
+  //                 content: Column(
+  //                   mainAxisSize: MainAxisSize.min,
+  //                   children: [
+  //                     Text(
+  //                       'Selected: ${selectedPlayers.length} / $numPlayersRequired',
+  //                       style: TextStyle(
+  //                         color: canConfirm ? Colors.green : Colors.grey,
+  //                         fontWeight: FontWeight.bold,
+  //                       ),
+  //                     ),
+  //                     SizedBox(height: 10),
+  //                     Expanded(
+  //                       child: SingleChildScrollView(
+  //                         child: Column(
+  //                           children: allPlayers.map((player) {
+  //                             final isSelected = selectedPlayers.contains(
+  //                               player,
+  //                             );
+  //                             return CheckboxListTile(
+  //                               title: Text(player.name()),
+  //                               value: isSelected,
+  //                               onChanged: (bool? value) {
+  //                                 setState(() {
+  //                                   if (value == true) {
+  //                                     selectedPlayers.add(player);
+  //                                   } else {
+  //                                     selectedPlayers.remove(player);
+  //                                   }
+  //                                 });
+  //                               },
+  //                             );
+  //                           }).toList(),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 actions: [
+  //                   TextButton(
+  //                     onPressed: (() {
+  //                       selectedPlayers.clear();
+  //                       Navigator.pop(context, selectedPlayers);
+  //                     }),
+  //                     child: Text('Cancel'),
+  //                   ),
+  //                   TextButton(
+  //                     onPressed: canConfirm
+  //                         ? () => Navigator.pop(context, selectedPlayers)
+  //                         : null,
+  //                     child: Text('OK'),
+  //                   ),
+  //                 ],
+  //               );
+  //             },
+  //           );
+  //         },
+  //       ) ??
+  //       [];
+  // }
 
   //---------------------------------------------------------------
 
@@ -1024,12 +1071,3 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   //-----------------------------------------------------------------
 }
-
-class RoundRow {
-  final String? label; // null if no leading number
-  final Widget row; // The actual row content
-
-  RoundRow({this.label, required this.row});
-}
-
-//-----------------------------------------------------------------

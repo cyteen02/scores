@@ -97,13 +97,13 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyMixin {
   //--------------------------------------------------------------
 
   Widget addPlayerScore(Round round, Player player) {
-    debugMsg("row for ${player.name()} current ${round.getScore(player)}");
+    debugMsg("row for ${player.name} current ${round.getScore(player)}");
     return Column(
       children: [
         Row(
           children: [
             Text(
-              player.name(),
+              player.name,
               style: TextStyle(color: player.color, fontSize: 30),
               textAlign: TextAlign.left,
             ),
@@ -168,7 +168,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyMixin {
   //--------------------------------------------------------------
 
   void buttonPressed(Round round, Player player, int scoreButton) {
-    debugMsg("buttonPressed ${player.name()} add score of $scoreButton");
+    debugMsg("buttonPressed ${player.name} add score of $scoreButton");
 
     setState(() {
       debugMsg(round.toString());

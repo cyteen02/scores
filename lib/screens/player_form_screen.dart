@@ -56,7 +56,7 @@ class _PlayerFormScreenState extends State<PlayerFormScreen> {
     // Pre-fill form if editing existing person
     if (widget.player != null) {
       creatingNewPlayer = false;
-      _nameController.text = widget.player!.name();
+      _nameController.text = widget.player!.name;
       _selectedColour = widget.player!.color;
       _photoPath = widget.player!.photoPath;
     }

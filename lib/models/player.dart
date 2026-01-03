@@ -29,7 +29,8 @@ Player();
   Player.id(int this.id);
 
   // Getters
-  String name() => _name;
+//  String name => _name;
+    String get name => _name;
 
 //  int? get id => id;
 

@@ -154,9 +154,17 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              Text('${game.roundList.length} rounds'),
+              game.fixedNumRounds() ? 
+                Text('${game.roundList.length} rounds') :
+                Text('No fixed rounds'),
               Text(
-                game.showFutureRoundsType.name,
+                game.showFutureRoundsType.description,
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blue,
+                ))
+                ,
+              Text("Win condition: ${game.winCondition.description}",
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.blue,

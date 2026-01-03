@@ -70,7 +70,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
         players.add(newPlayer);
       });
       if (mounted) {
-        showPopupMessage(context, '${newPlayer.name()} added');
+        showPopupMessage(context, '${newPlayer.name} added');
       }
     }
   }
@@ -90,7 +90,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
         players[index] = updatedPlayer;
       });
       if (mounted) {
-        showPopupMessage(context, '${updatedPlayer.name()} updated');
+        showPopupMessage(context, '${updatedPlayer.name} updated');
       }
     }
   }
@@ -109,7 +109,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
     // remove from database
     playerRespository.deletePlayer(player.id ?? 0);
 
-    showPopupMessage(context, '${player.name()} deleted');
+    showPopupMessage(context, '${player.name} deleted');
   }
 
   //------------------------------------------------------------------
@@ -121,7 +121,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
         return AlertDialog(
           title: const Text('Delete Person'),
           content: Text(
-            'Are you sure you want to delete ${players[index].name()}?',
+            'Are you sure you want to delete ${players[index].name}?',
           ),
           actions: [
             TextButton(
@@ -215,7 +215,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
               itemBuilder: (context, index) {
                 final player = players[index];
                 return Dismissible(
-                  key: Key(player.name() + index.toString()),
+                  key: Key(player.name + index.toString()),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     color: Colors.red,
@@ -273,14 +273,14 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
                           : CircleAvatar(
                               backgroundColor: player.color,
                               child: Text(
-                                player.name()[0].toUpperCase(),
+                                (player.name)[0].toUpperCase(),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                      title: Text(player.name()),
+                      title: Text(player.name),
                       subtitle: Row(
                         children: [
                           Container(

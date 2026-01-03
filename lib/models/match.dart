@@ -85,7 +85,7 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
 
   bool playerNameExists(String playerName) {
-    return players.any((p) => p.name() == playerName);
+    return players.any((p) => p.name == playerName);
   }
   //-----------------------------------------------------------------
 
@@ -100,7 +100,7 @@ class Match with MyMixin {
   void addPlayerByName(String playerName) {
     bool playerNameFound = false;
     for (Player p in players) {
-      playerNameFound = playerNameFound | (p.name() == playerName);
+      playerNameFound = playerNameFound | (p.name == playerName);
     }
 
     if (!playerNameFound) {
@@ -141,7 +141,7 @@ class Match with MyMixin {
 
   Player? getPlayerByName(String playerName) {
     return players.cast<Player?>().firstWhere(
-      (p) => p?.name() == playerName,
+      (p) => p?.name == playerName,
       orElse: () => null,
     );
   }
@@ -157,7 +157,7 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
 
   List<String> getPlayerNames() {
-    return players.map((p) => p.name()).toList();
+    return players.map((p) => p.name).toList();
   }
 
   //-----------------------------------------------------------------
@@ -175,7 +175,7 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
 
   void replacePlayer(Player oldPlayer, Player newPlayer) {
-    int index = players.indexWhere((player) => player.name() == oldPlayer.name());
+    int index = players.indexWhere((player) => player.name == oldPlayer.name);
     players[index] = newPlayer;
 
     // relpace player in all the rounds as well
@@ -288,8 +288,8 @@ class Match with MyMixin {
 
   void clear() {
     debugMsg("Match clear");
-    players.clear();
     rounds.clear();
+    players.clear();
   }
 
   //-----------------------------------------------------------------
