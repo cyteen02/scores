@@ -55,10 +55,9 @@ class RoundRow {
 
 class _ListRoundsState extends State<ListRounds> with MyMixin {
   bool isLoading = true;
-//  int _bnbSelectedIndex = 0;
   late Match match;
   late Game game;
-  //  int _counter = 0;
+
   double roundLabelsWidth = 0.0;
 
   @override
@@ -565,12 +564,16 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       }
     }
 
-    Round newRound = await Navigator.push(
+    Round? newRound = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AddRoundScreen(match: match)),
     );
     debugMsg('addButtonPressed result=$newRound');
 
+    if ( newRound == null ) {
+      return;
+    }
+    
     setState(() {
       match.addRound(newRound);
     });

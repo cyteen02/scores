@@ -15,6 +15,7 @@ import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 class GameRepository {
+
   final dbHelper = DatabaseHelper.instance;
 
   //----------------------------------------------------------------

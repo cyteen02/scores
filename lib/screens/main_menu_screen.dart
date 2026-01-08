@@ -16,6 +16,7 @@ import 'package:scores/database/game_repository.dart';
 import 'package:scores/mixin/my_mixin.dart';
 import 'package:scores/screens/list_games_screen.dart';
 import 'package:scores/screens/list_players_screen.dart';
+import 'package:scores/screens/match_stats_list_screen.dart';
 import 'package:scores/screens/test_screen.dart';
 import 'package:scores/utils/my_utils.dart';
 
@@ -71,7 +72,38 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Pick your game'), centerTitle: true),
+      appBar: AppBar(
+        title: Text('Pick your game'),
+        centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'match_stats') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MatchStatsListScreen(),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem(
+                value: 'match_stats',
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics, size: 20),
+                    SizedBox(width: 8),
+                    Text('View Match Stats'),
+                  ],
+                ),
+              ),
+              // Add more menu items here as needed
+            ],
+          ),
+        ],
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Container(child: gamesButtons()),

@@ -10,6 +10,7 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
+import 'package:scores/database/match_stats_repository.dart';
 import 'package:scores/mixin/my_mixin.dart';
 import 'package:scores/models/match.dart';
 import 'package:scores/models/player.dart';
@@ -126,15 +127,25 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
 
   //-------------------------------------------------------------------
 
-  void saveMatchStats(Match match) {}
+  void saveMatchStats(Match match) {
+
+    debugMsg("saveMatchStats");
+    MatchStatsRepository repository = MatchStatsRepository();
+    repository.saveStats(match);
+    
+    // now clear everything ready for next time
+    discardMatch(match);
+  }
 
   //-------------------------------------------------------------------
 
   void discardMatch(Match match) {
     
+    debugMsg("discardMatchStats");    
     match.clear();
 
     // save the cleared match, otherwise it just reloads
+    // by creating a new empty match and overwriting the old one
     final MatchStorage storage = MatchStorage();
     storage.saveMatch(match);
   }

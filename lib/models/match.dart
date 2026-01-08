@@ -10,6 +10,7 @@
 *----------------------------------------------------------------------------*/
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ import 'package:scores/models/game.dart';
 // a MATCH is where a group of PLAYERs play a GAME
 
 class Match with MyMixin {
-  int? id;
+  int? _id;
   late String _name;
   Game game = Game();
   List<Player> players = <Player>[];
@@ -32,20 +33,26 @@ class Match with MyMixin {
   // Constructor
   Match() {
     _name = "";
+    _id = DateTime.now().millisecondsSinceEpoch * 1000 + Random().nextInt(1000);
   }
 
   Match.name(String name) {
     _name = name;
+    _id = DateTime.now().millisecondsSinceEpoch * 1000 + Random().nextInt(1000);
     game = Game.name(name);
   }
 
-  Match.id(int id) {
-    id = id;
-  }
+  // Match.id(int id) {
+  //   id = id;
+  // }
 
   // getters
   String get name => _name;
 
+  int get id {
+    _id ??= DateTime.now().millisecondsSinceEpoch * 100 + Random().nextInt(1000);
+    return _id!;
+  }
   //  GameType3 get gameType => gameType;
 
   //  List<Player> get players => players;
@@ -185,13 +192,64 @@ class Match with MyMixin {
   }
   //-----------------------------------------------------------------
 
-  int getTotalScoreForPlayerId(int playerId) {
+  int numRoundsPlayed() {
+    return rounds.length;
+  }
+  //-----------------------------------------------------------------
+
+  int totalScoreForPlayerId(int playerId) {
     int totalScore = 0;
     for (Round round in rounds) {
       totalScore += round.getScoreById(playerId) ?? 0;
     }
     return totalScore;
   }
+
+//-----------------------------------------------------------------
+
+  int numRoundsMatchingScore(int playerId, int score) {
+    int numRounds = 0;
+    for (Round round in rounds) {
+      if ( ( round.getScoreById(playerId) ?? 0 ) == score ){
+          numRounds++;
+      }
+    }
+    return numRounds;
+  }
+
+  //-----------------------------------------------------------------
+
+  int maxScoreForPlayerId(int playerId) {
+    int maxScore = 0;
+    for (Round round in rounds) {
+      var playerScore = round.getScoreById(playerId) ?? 0;
+      if ( playerScore > maxScore ) {
+        maxScore = playerScore;
+      }
+    }
+    return maxScore;
+  }
+
+  //-----------------------------------------------------------------
+
+  int minScoreForPlayerId(int playerId) {
+    // hoping this is a reasonable highest score!
+    int minScore = 999999;
+    for (Round round in rounds) {
+      var playerScore = round.getScoreById(playerId) ?? 0;
+      if ( playerScore < minScore ) {
+        minScore = playerScore;
+      }
+    }
+    return minScore;
+  }
+
+  //-----------------------------------------------------------------
+
+  double avgScoreForPlayerId(int playerId) {
+    return totalScoreForPlayerId(playerId) / numRoundsPlayed();
+  }
+
 
   //-----------------------------------------------------------------
 
@@ -201,7 +259,7 @@ class Match with MyMixin {
     Map<int, int> totalScores = {};
 
     for (Player player in players) {
-      totalScores[player.id ?? 0] = getTotalScoreForPlayerId(player.id ?? 0);
+      totalScores[player.id ?? 0] = totalScoreForPlayerId(player.id ?? 0);
     }
 
     return totalScores.values.toList();
@@ -228,7 +286,7 @@ class Match with MyMixin {
     int highestScore = getHighestScore();
 
     for (Player player in players) {
-      if (getTotalScoreForPlayerId(player.id ?? 0) == highestScore) {
+      if (totalScoreForPlayerId(player.id ?? 0) == highestScore) {
         highestScorePlayers.add(player);
       }
     }
@@ -244,7 +302,7 @@ class Match with MyMixin {
     int lowestScore = getLowestScore();
 
     for (Player player in players) {
-      if (getTotalScoreForPlayerId(player.id ?? 0) == lowestScore) {
+      if (totalScoreForPlayerId(player.id ?? 0) == lowestScore) {
         lowestScorePlayers.add(player);
       }
     }
@@ -289,7 +347,6 @@ class Match with MyMixin {
   void clear() {
     debugMsg("Match clear");
     rounds.clear();
-    players.clear();
   }
 
   //-----------------------------------------------------------------
@@ -297,7 +354,7 @@ class Match with MyMixin {
   // Convert to Map for SQLite
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'id': _id,
       'name': _name,
       'game_type_id': game.id, // Store foreign key
       'players': jsonEncode(players.map((p) => p.toMap()).toList()),
@@ -318,7 +375,7 @@ class Match with MyMixin {
     Map<String, dynamic> jsonString;
 
     jsonString = {
-      'id': id,
+      'id': _id,
       'name': _name,
       'players': players.map((player) => player.toJson()).toList(),
       'rounds': rounds.map((round) => round.toJson()).toList(),
@@ -332,27 +389,27 @@ class Match with MyMixin {
 
   // Create from JSON
   factory Match.fromJson(Map<String, dynamic> json) {
-    Match game = Match.name(json['name']);
-    game.id = json['id'];
+    Match match = Match.name(json['name']);
+    match._id = json['id'];
 
     // Decode the JSON string first, then map
-    game.players = json['players'] != null
+    match.players = json['players'] != null
         ? (jsonDecode(json['players']) as List)
               .map((playerJson) => Player.fromJson(playerJson))
               .toList()
         : <Player>[];
 
-    game.rounds = json['rounds'] != null
+    match.rounds = json['rounds'] != null
         ? (jsonDecode(json['rounds']) as List)
               .map((roundJson) => Round.fromJson(roundJson))
               .toList()
         : <Round>[];
         
     debugMsg("++++++++++++++++++++++++++++++++++++++++");
-    debugMsg(game.toString());
+    debugMsg(match.toString());
     debugMsg("++++++++++++++++++++++++++++++++++++++++");
 
-    return game;
+    return match;
   }
 
   //-----------------------------------------------------------------

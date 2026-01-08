@@ -14,7 +14,7 @@ import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String dbName = "scores.db";
-const int dbVersion = 1;
+const int dbVersion = 3;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -33,14 +33,14 @@ class DatabaseHelper {
   Future<Database> _initDB(String dbName) async {
     debugMsg("_initDb dbName $dbName version $dbVersion");
 
-/************************************************************
+    /************************************************************
  TEMPORARY
  deleteDB();
  ************************************************************/
 
-     final dbPath = await getDatabasesPath();
-     final path =  join(dbPath, dbName);
-//    String path = "/data/user/0/com.example.scores/databases/scores.db";
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, dbName);
+    //    String path = "/data/user/0/com.example.scores/databases/scores.db";
 
     debugMsg("path is $path");
 
@@ -50,6 +50,8 @@ class DatabaseHelper {
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
+
+    await db.execute('PRAGMA foreign_keys = ON');
 
     return db;
 
@@ -107,10 +109,67 @@ class DatabaseHelper {
         score INT
       )
     ''');
+
+    await db.execute('''
+        CREATE TABLE IF NOT EXISTS match_stats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          stat TEXT NOT NULL,
+          value TEXT NOT NULL
+        )
+      ''');
+
+    await db.execute('''
+        CREATE TABLE IF NOT EXISTS match_player_stats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          player_id INTEGER NOT NULL,
+          stat TEXT NOT NULL,
+          value TEXT NOT NULL,
+          FOREIGN KEY (match_id) REFERENCES match_stats (match_id) ON DELETE CASCADE
+        )
+      ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugMsg("_onUpgrade oldVersion $oldVersion newVersion $newVersion");
+
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS match_stats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          stat TEXT NOT NULL,
+          value TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS match_player_stats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          player_id INTEGER NOT NULL,
+          stat TEXT NOT NULL,
+          value TEXT NOT NULL,
+          FOREIGN KEY (match_id) REFERENCES match_stats (match_id) ON DELETE CASCADE
+        )
+      ''');
+    }
+
+        if (oldVersion < 3) {
+
+      await db.execute("DROP TABLE match_player_stats");
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS match_player_stats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          match_id INTEGER NOT NULL,
+          player_id INTEGER NOT NULL,
+          stat TEXT NOT NULL,
+          value TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future deleteDB() async {
