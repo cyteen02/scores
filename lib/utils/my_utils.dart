@@ -67,4 +67,9 @@ void showPopupError(
 }
 //----------------------------------------------------------------
 
+String listInttoCsv(List<int> numList) {
+  numList.sort();
+  return numList.map((n) => n.toString()).join(",");
+}
 
+//----------------------------------------------------------------

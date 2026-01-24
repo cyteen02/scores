@@ -9,14 +9,23 @@
 *
 *-------------------------------------------------------------------------*/
 
+/* TERMINOLOGY
+
+a game is a set of rules and rounds 
+a player is a person who plays games
+a playerSet is a number of people who have got together to play
+a match a game played by a playerSet
+*/
+
+
 import 'package:flutter/material.dart';
-import 'package:scores/mixin/my_mixin.dart';
+import 'package:scores/presentation/mixin/my_mixin.dart';
 import 'package:scores/utils/my_utils.dart';
 
 // import 'package:scores/models/game.dart';
 // import 'package:scores/models/player.dart';
 // import 'package:scores/models/round.dart';
-import 'package:scores/screens/main_menu_screen.dart';
+import 'package:scores/presentation/screens/main_menu_screen.dart';
 // import 'package:scores/models/player.dart';
 // import 'package:scores/models/round.dart';
 
