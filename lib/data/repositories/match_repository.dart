@@ -12,6 +12,7 @@
 import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/match_history.dart';
 import 'package:scores/data/repositories/database_helper.dart';
+import 'package:scores/data/repositories/location_repository.dart';
 import 'package:scores/data/repositories/match_history_repository.dart';
 
 import 'package:scores/data/repositories/match_player_stats_repository.dart';
@@ -25,13 +26,15 @@ import 'package:scores/utils/my_utils.dart';
 class MatchRepository {
   final dbHelper = DatabaseHelper.instance;
 
-final PlayerSetRepository playerSetRepository;
+  final PlayerSetRepository playerSetRepository;
+  final LocationRepository locationRepository;
   final MatchHistoryRepository matchHistoryRepository;
   final MatchStatsRepository matchStatsRepository;
   final MatchPlayerStatsRepository matchPlayerStatsRepository;
 
   MatchRepository(
-    this.playerSetRepository,    
+    this.playerSetRepository,
+    this.locationRepository,
     this.matchHistoryRepository,
     this.matchStatsRepository,
     this.matchPlayerStatsRepository,
@@ -41,7 +44,6 @@ final PlayerSetRepository playerSetRepository;
 
   // Save a completed match to the database
   Future<int> saveMatch(Match match) async {
-    
     // Save match-level stats
 
     debugMsg("matchRepository saveMatch matchId ${match.id}");
@@ -49,10 +51,10 @@ final PlayerSetRepository playerSetRepository;
     // Save the player set
 
     int playerSetId;
-    if ( ! await playerSetRepository.exists(match.playerSet.id??0)) {
+    if (!await playerSetRepository.exists(match.playerSet.id ?? 0)) {
       playerSetId = await playerSetRepository.insert(match.playerSet);
     } else {
-      playerSetId = match.playerSet.id??0;  
+      playerSetId = match.playerSet.id ?? 0;
     }
 
     matchHistoryRepository.insert(

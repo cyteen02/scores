@@ -9,6 +9,7 @@ class Player with MyMixin {
   int id;
   String name;
   int color;
+  String photoPath;
 
 
   // Constructors
@@ -16,7 +17,8 @@ class Player with MyMixin {
   Player({
     required this.id,
     required this.name,
-    this.color = 0
+    this.color = 0,
+    this.photoPath = ""
   });
 
 
@@ -57,6 +59,18 @@ class Player with MyMixin {
 
   void setColor(Color c) => color = c.toInt();
 
+//---------------------------------------------------------------------------
+
+  factory Player.copyFrom(Player oldPlayer) {
+
+    return Player(id: oldPlayer.id,
+                  name: oldPlayer.name,
+                  color: oldPlayer.color,
+                  photoPath: oldPlayer.photoPath);
+  }
+
+  //---------------------------------------------------------------------------
+  
   // Convert to JSON
   Map<String, dynamic> toJson() {
     debugMsg("Player toJson");
@@ -64,6 +78,7 @@ class Player with MyMixin {
       'id': id,
       'name': name,
       'color': color, // Store color as integer
+      'photoPath': photoPath
     };
   }
 
@@ -73,15 +88,17 @@ class Player with MyMixin {
   return Player(
     id: json['id'],
     name: json['name'],
-    color: json['color']);
+    color: json['color'],
+    photoPath: json['photoPath']??"");
   }
 
 
 Map<String, dynamic> toMap() {
   return {
-    'id': id,
+     'id': id,
     'name': name,
     'color': color,
+    'photoPath': photoPath
   };
 }
 
@@ -89,7 +106,8 @@ factory Player.fromMap(Map<String, dynamic> map) {
   return Player(
     id: map['id'],
     name: map['name'],
-    color: map['color']
+    color: map['color'],
+    photoPath: map['photoPath']??""    
   );
 }
 

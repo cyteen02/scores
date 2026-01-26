@@ -11,21 +11,22 @@
 
 import 'package:scores/data/repositories/database_helper.dart';
 import 'package:scores/data/models/player.dart';
-import 'package:sqflite/sqflite.dart';
 
 class PlayerRepository {
   final dbHelper = DatabaseHelper.instance;
 
   // Insert a player
-  Future<void> insertPlayer(Player player) async {
+  Future<int> insertPlayer(Player player) async {
     final db = await dbHelper.database;
-    final id = await db.insert(
-      'player',
-      player.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final id = await db.insert('player', {
+      'name': player.name,
+      'color': player.color,
+      'photoPath': player.photoPath,
+    });
 
     player.id = id;
+
+    return id;
   }
 
   //----------------------------------------------------------------
@@ -39,7 +40,6 @@ class PlayerRepository {
       batch.insert(
         'player',
         player.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
 

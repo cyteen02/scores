@@ -22,10 +22,13 @@ class MatchHistoryRepository {
   static const String createTableSQL =
       '''
     CREATE TABLE $tableName (
-      match_id INTEGER PRIMARY KEY NOT NULL,
-      game_id INTEGER NOT NULL,
-      player_set_id INTEGER DEFAULT 1 NOT NULL,
-      match_date TEXT NOT NULL       
+        match_id INTEGER PRIMARY KEY,
+        game_id INTEGER NOT NULL,
+        player_set_id NOT NULL,
+        match_date TEXT NOT NULL,        
+        location_id INTEGER REFERENCES location(id) ON DELETE SET NULL,
+       FOREIGN KEY (game_id) REFERENCES game (id),
+       FOREIGN KEY (player_set_id) REFERENCES player_set (id)       
     )
   ''';
 

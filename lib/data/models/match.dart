@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'dart:math';
 
 //import 'package:flutter/material.dart';
+import 'package:scores/data/models/location.dart';
 import 'package:scores/data/models/player_set.dart';
 
 import 'package:scores/presentation/mixin/my_mixin.dart';
@@ -28,6 +29,7 @@ class Match with MyMixin {
   int id;
   Game game;
   PlayerSet playerSet;
+  Location? location;
   List<Round> rounds;
 
   // Constructor
@@ -35,10 +37,11 @@ class Match with MyMixin {
     int? id,
     required this.game,
     required this.playerSet,
-    List<Round>? rounds
+    this.location,
+    List<Round>? rounds,
   }) : id = id ?? MyMixin.generateId(),
-      rounds = rounds ?? [];
-      
+       rounds = rounds ?? [];
+
   // Match() {
   //   _name = "";
   //   _id = DateTime.now().millisecondsSinceEpoch * 1000 + Random().nextInt(1000);
@@ -126,9 +129,8 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
 
   void initFirstRound() {
-
     Round firstRound = Round();
-    if ( game.roundLabels.isNotEmpty) {
+    if (game.roundLabels.isNotEmpty) {
       firstRound.roundLabel = game.roundLabels[0];
     }
     firstRound.initPlayerScores(playerSet.players);
@@ -137,6 +139,17 @@ class Match with MyMixin {
 
   //-----------------------------------------------------------------
 
+  void initAllRounds() {
+    // Set the init scores for all the rounds
+    Round round;
+    for (int r = 0; r < game.roundLabels.length; r++) {
+      round = Round();
+      round.initPlayerScores(playerSet.players);
+      rounds.add(round);
+    }
+  }
+
+  //-----------------------------------------------------------------
   bool useRoundLabels() {
     return game.roundLabels.isNotEmpty;
   }
@@ -196,6 +209,11 @@ class Match with MyMixin {
     for (Round round in rounds) {
       round.replacePlayer(oldPlayer, newPlayer);
     }
+  }
+  //-----------------------------------------------------------------
+
+  void replacePlayers(List<Player> newPlayers) {
+    playerSet.replacePlayers(newPlayers);
   }
   //-----------------------------------------------------------------
 
@@ -347,7 +365,13 @@ class Match with MyMixin {
 
   void resetScores() {
     debugMsg("Match resetScores");
-    rounds.clear();
+    //    rounds.clear();
+    rounds = [];
+
+    if (game.showFutureRoundsType == ShowFutureRoundsType.showAllFutureRounds) {
+      // initialise all the next rounds
+      initAllRounds();
+    }
   }
 
   //-----------------------------------------------------------------
@@ -383,6 +407,7 @@ class Match with MyMixin {
       'name': name,
       'game_type_id': game.id, // Store foreign key
       'players': jsonEncode(playerSet.players.map((p) => p.toMap()).toList()),
+      'location': location?.toMap(),
       'rounds': jsonEncode(rounds.map((r) => r.toMap()).toList()),
     };
   }
@@ -395,28 +420,10 @@ class Match with MyMixin {
       'id': id,
       'game': game.toJson(),
       'playerSet': playerSet.toJson(),
+      'location': location?.toMap(),
       'game_type_id': game.id, // Store foreign key
       'rounds': jsonEncode(rounds.map((r) => r.toMap()).toList()),
     };
-  }
-
-  //-----------------------------------------------------------------
-
-  // Convert to JSON
-  Map<String, dynamic> toJsonOld() {
-    debugMsg("Match toJson");
-
-    Map<String, dynamic> jsonString;
-
-    jsonString = {
-      'id': id,
-      'game': game.toJson(),
-      'playerSet': playerSet.toJson(),
-      'rounds': rounds.map((round) => round.toJson()).toList(),
-    };
-
-    debugMsg(jsonString.toString(), true);
-    return jsonString;
   }
 
   //-----------------------------------------------------------------
@@ -433,6 +440,13 @@ class Match with MyMixin {
     PlayerSet playerSet = PlayerSet();
     if (json.containsKey('playerSet')) {
       playerSet = PlayerSet.fromJson(json['playerSet']);
+    }
+
+    Location? location;
+    if (json.containsKey('location')) {
+      location = json['location'] == null
+          ? null
+          : Location.fromMap(json['location']);
     }
 
     // if (json.containsKey('players')) {
@@ -458,6 +472,7 @@ class Match with MyMixin {
       id: id,
       game: game,
       playerSet: playerSet,
+      location: location,
       rounds: rounds,
     );
 
@@ -474,12 +489,14 @@ class Match with MyMixin {
     int? id,
     Game? game,
     PlayerSet? playerSet,
+    Location? location,
     List<Round>? rounds,
   }) {
     return Match(
       id: id ?? this.id,
       game: game ?? this.game,
       playerSet: playerSet ?? this.playerSet,
+      location: location ?? this.location,
       rounds: rounds ?? this.rounds,
     );
   }
@@ -491,6 +508,8 @@ class Match with MyMixin {
     StringBuffer buffer = StringBuffer();
 
     buffer.write("id $id game $game");
+
+    buffer.write("location $location");
 
     buffer.write(" players[");
     for (var player in playerSet.players) {
@@ -505,7 +524,7 @@ class Match with MyMixin {
     }
     buffer.write("]");
 
-        return buffer.toString();
+    return buffer.toString();
   }
 
   //-----------------------------------------------------------------

@@ -32,6 +32,8 @@ class Location {
     };
   }
 
+//---------------------------------------------------------------------------
+
   // Create a Location from a Map (from database)
   factory Location.fromMap(Map<String, dynamic> map) {
     return Location(
@@ -42,6 +44,7 @@ class Location {
     );
   }
 
+//---------------------------------------------------------------------------
   // Create a copy with optional field updates
   Location copyWith({
     int? id,

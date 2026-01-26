@@ -20,7 +20,7 @@ import 'package:sqflite/sqflite.dart';
 class PlayerSetRepository {
   final dbHelper = DatabaseHelper.instance;
 
-  static const String tablePlayerSets = 'player_sets';
+  static const String tablePlayerSets = 'player_set';
   static const String tablePlayerSetMembers = 'player_set_players';
 
   // Table creation SQL
@@ -115,7 +115,7 @@ class PlayerSetRepository {
     final playerMaps = await db.rawQuery(
       '''
       SELECT p.*
-      FROM players p
+      FROM player p
       INNER JOIN $tablePlayerSetMembers psm ON p.id = psm.player_id
       WHERE psm.player_set_id = ?
     ''',

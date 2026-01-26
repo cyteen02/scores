@@ -21,128 +21,52 @@ class TestScreen extends StatefulWidget {
 class _TestScreenState extends State<TestScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Test screen'), centerTitle: true),
-      body: testListView(),
-      //      testDismissible(3),
-      // testDismissible(4),
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: const Text('ReorderableListView Sample')),
+        body: const ReorderableExample(),
+      ),
     );
   }
+}
 
-  Widget testRow(int rownum) {
-    return Row(
-      children: [
-        testText(rownum, "a"),
-        //          VerticalDivider(width: 1, thickness: 1, color: Colors.black),
-        testText(rownum, "b"),
-        //          VerticalDivider(width: 1, thickness: 1, color: Colors.black),
-        testText(rownum, "c"),
+class ReorderableExample extends StatefulWidget {
+  const ReorderableExample({super.key});
+
+  @override
+  State<ReorderableExample> createState() => _ReorderableListViewExampleState();
+}
+
+class _ReorderableListViewExampleState extends State<ReorderableExample> {
+  final List<int> _items = List<int>.generate(50, (int index) => index);
+
+  @override
+  Widget build(BuildContext context) {
+        final Color oddItemColor = Colors.black;
+    final Color evenItemColor = Colors.white;
+
+    return ReorderableListView(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      children: <Widget>[
+        for (int index = 0; index < _items.length; index += 1)
+          ListTile(
+            key: Key('$index'),
+            tileColor: _items[index].isOdd ? oddItemColor : evenItemColor,
+            title: ReorderableDragStartListener(
+              index: index,
+              child: Text('Item ${_items[index]}'),
+            ),
+          ),
       ],
-    );
-  }
-
-  //---------------------------------------------------------
-
-  Widget testText(int rownum, String coltag) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: Colors.grey, width: 2.0)),
-        ),
-        child: Center(
-          child: Text("Row $rownum$coltag", style: TextStyle(fontSize: 24)),
-        ),
-      ),
-    );
-  }
-
-  //---------------------------------------------------------
-
-  Widget testDismissible(int rownum) {
-    return Dismissible(
-      key: ValueKey(rownum),
-      direction: DismissDirection.endToStart,
-      // background: Container(
-      //   color: Colors.red,
-      //   alignment: Alignment.centerRight,
-      //   padding: EdgeInsets.zero,
-      //   child: const Icon(Icons.delete, color: Colors.white),
-      // ),
-      onDismissed: (direction) {
-        deleteRound();
-      },
-      child: //Card(
-      InkWell(
-        child: testRow(rownum),
-        //        onTap: () => _editRound(),
-      ),
-    );
-  }
-
-  //---------------------------------------------------------
-
-  void deleteRound() {
-    debugPrint("deleteRound");
-  }
-
-  //---------------------------------------------------------
-
-  void editRound() {
-    debugPrint("_editRound");
-  }
-
-  //---------------------------------------------------------
-
-  Widget testListView2() {
-    return ListView.builder(
-      itemCount: 2,
-      itemBuilder: (BuildContext context, int index) {
-        Widget? label;
-        // if (match.useRoundLabels()) {
-        //   label = rows[index].label != null
-        //       ? roundLabelAvatar(rows[index].label ?? "", Colors.blue)
-        //       : roundLabelAvatar("", Theme.of(context).colorScheme.surface);
-        // }
-
-        return Container(
-          //          height: 60,
-          key: Key("Row $index"),
-          padding: EdgeInsets.zero,
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.green, width: 1.0)),
-          ),
-          child: ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: label,
-            title: testDismissible(index),
-          ),
-        );
+      onReorder: (int oldIndex, int newIndex) {
+        setState(() {
+          if (oldIndex < newIndex) {
+            newIndex -= 1;
+          }
+          final int item = _items.removeAt(oldIndex);
+          _items.insert(newIndex, item);
+        });
       },
     );
-  }
-
-  //---------------------------------------------------------
-
-  Widget testListView() {
-    return Container(
-      padding: EdgeInsets.zero,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.green, width: 1.0)),
-      ),
-      child: ListView(
-        children: [
-          testListTile(1),
-          testListTile(2),
-        ],
-      ),
-    );
-  }
-  //---------------------------------------------------------
-
-  Widget testListTile(int rownum) {
-    return ListTile(
-                  contentPadding: EdgeInsets.zero,
-
-      title: testDismissible(rownum));
   }
 }

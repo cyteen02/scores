@@ -15,20 +15,20 @@ import 'package:scores/data/extensions/int_extensions.dart';
 import 'package:scores/data/models/location.dart';
 import 'package:scores/data/repositories/location_repository.dart';
 
-class LocationScreen extends StatefulWidget {
+class ListLocationsScreen extends StatefulWidget {
   
   final LocationRepository repository;
 
-  const LocationScreen({super.key, 
+  const ListLocationsScreen({super.key, 
                         required this.repository});
 
   @override
-  State<LocationScreen> createState() => _LocationScreenState();
+  State<ListLocationsScreen> createState() => _ListLocationsScreenState();
 }
 
 //-----------------------------------------------------------
 
-class _LocationScreenState extends State<LocationScreen> {
+class _ListLocationsScreenState extends State<ListLocationsScreen> {
   List<Location> _locations = [];
   bool _isLoading = true;
 

@@ -34,7 +34,7 @@ class EndMatchScreen extends StatefulWidget {
     super.key,
     required this.match,
     required this.matchRepository,
-    required this.matchStatsRepository
+    required this.matchStatsRepository,
   });
 
   @override
@@ -48,7 +48,6 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
   late MatchRepository matchRepository;
   late MatchStatsRepository matchStatsRepository;
 
-
   @override
   void initState() {
     debugMsg("_EndMatchScreenState initState");
@@ -57,7 +56,6 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     match = widget.match; // Copy to local state
     matchRepository = widget.matchRepository;
     matchStatsRepository = widget.matchStatsRepository;
-
   }
 
   //-------------------------------------------------------------------
@@ -106,7 +104,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
 
     debugMsg("get stats for previous matches");
     // Get stats for previous matches for this game & players
-//    MatchStatsRepository matchStatsRepository = MatchStatsRepository();
+    //    MatchStatsRepository matchStatsRepository = MatchStatsRepository();
 
     List<String> winnersList = await matchStatsRepository
         .getWinnersByGamePlayers(match.game.name, match.playersCsv);
@@ -126,9 +124,15 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     //   for (var entry in scoreStats.entries) entry.key: int.parse(entry.value),
     // };
 
-    List<MatchPlayerStats> matchPlayerStatsList = await matchPlayerStatsRepository.getByGameIdAndPlayerSet(match.game.id??0, match.playerSet.id??0);
+    List<MatchPlayerStats> matchPlayerStatsList =
+        await matchPlayerStatsRepository.getByGameIdAndPlayerSet(
+          match.game.id ?? 0,
+          match.playerSet.id ?? 0,
+        );
 
-    Map<String, dynamic> historicStats = calcMatchHistoricStats(matchPlayerStatsList);
+    Map<String, dynamic> historicStats = calcMatchHistoricStats(
+      matchPlayerStatsList,
+    );
 
     stats.addAll(historicStats);
 
@@ -245,13 +249,19 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
   //-------------------------------------------------------------------
 
   Widget matchStatsTable() {
-
     debugMsg("building matchStatsTable");
 
     List<DataColumn> dataColumns = [];
     dataColumns.add(DataColumn(label: Text("")));
     for (Player player in match.playerSet.players) {
-      dataColumns.add(DataColumn(label: Text(player.name)));
+      dataColumns.add(
+        DataColumn(
+          label: Text(
+            player.name,
+            style: TextStyle(color: player.color.toColor()),
+          ),
+        ),
+      );
     }
 
     List<Widget> rows = [];
@@ -293,7 +303,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     return Column(children: rows);
   }
 
-   //-------------------------------------------------------------------
+  //-------------------------------------------------------------------
 
   //   Future<Map<String, dynamic>> _fetchEndMatchData() async {
 
@@ -368,8 +378,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     Map<int, int> maxScores,
     Map<int, int> totalScores,
   ) {
-
-    if ( minScores.isEmpty ) {
+    if (minScores.isEmpty) {
       return Text("No historic data");
     }
 
@@ -377,7 +386,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
 
     rows.add(Center(child: Text("Stats from previous matches:")));
 
-//    Map<int, int> numWins = {};
+    //    Map<int, int> numWins = {};
 
     // // Initialize all players with 0 wins
     // for (Player player in match.playerSet.players) {
@@ -396,7 +405,14 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     List<DataColumn> dataColumns = [];
     dataColumns.add(DataColumn(label: Text("")));
     for (Player player in match.players) {
-      dataColumns.add(DataColumn(label: Text(player.name)));
+      dataColumns.add(
+        DataColumn(
+          label: Text(
+            player.name,
+            style: TextStyle(color: player.color.toColor()),
+          ),
+        ),
+      );
     }
 
     List<DataCell> dataCellList = [];
@@ -404,6 +420,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     for (Player player in match.players) {
       dataCellList.add(DataCell(Text(numWins[player.id].toString())));
     }
+
     dataRows.add(DataRow(cells: dataCellList));
 
     List<DataCell> dataCellList2 = [];

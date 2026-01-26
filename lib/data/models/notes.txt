@@ -12,3 +12,10 @@ player
 round
 - each player has a score
 
+
+
+Next version
+============
+ Standardize toMap vs toJson across all classes
+
+ 

@@ -13,7 +13,6 @@ import 'dart:math';
 import 'package:scores/data/models/player.dart';
 import 'package:scores/utils/my_utils.dart';
 
-
 class PlayerSet {
   int? id;
   List<Player> players = <Player>[];
@@ -26,10 +25,11 @@ class PlayerSet {
 
   // Generate unique ID
   int _generateId() {
-    return DateTime.now().millisecondsSinceEpoch * 1000 + Random().nextInt(1000);
+    return DateTime.now().millisecondsSinceEpoch * 1000 +
+        Random().nextInt(1000);
   }
 
-    // Setters
+  // Setters
 
   //---------------------------------------------------------------
 
@@ -45,7 +45,9 @@ class PlayerSet {
     return PlayerSet(
       id: json['id'] as int?,
       players: (json['players'] as List<dynamic>?)
-          ?.map((playerJson) => Player.fromJson(playerJson as Map<String, dynamic>))
+          ?.map(
+            (playerJson) => Player.fromJson(playerJson as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -57,42 +59,68 @@ class PlayerSet {
     players.add(player);
   }
 
+  //---------------------------------------------------------------
+
   void addPlayers(List<Player> players) {
-   for (Player player in players) {
+    for (Player player in players) {
       players.add(player);
     }
   }
+
+  //---------------------------------------------------------------
 
   void removePlayer(Player player) {
     players.remove(player);
   }
 
+  //---------------------------------------------------------------
+
   void clearPlayers() {
     players.clear();
   }
+
+  //---------------------------------------------------------------
 
   bool nameExists(String playerName) {
     return players.any((p) => p.name == playerName);
   }
 
+  //---------------------------------------------------------------
+
   int get playerCount => players.length;
 
+  //---------------------------------------------------------------
+
   int get numPlayers => players.length;
+
+  //---------------------------------------------------------------
 
   void replacePlayer(Player oldPlayer, Player newPlayer) {
     int index = players.indexWhere((player) => player.name == oldPlayer.name);
     players[index] = newPlayer;
   }
 
+  //---------------------------------------------------------------
+
+  void replacePlayers(List<Player> newPlayers) {
+    for (int i = 0; i<newPlayers.length ; i++) {
+      players[i] = Player.copyFrom(newPlayers[i]);
+    }
+  }
+
+  //---------------------------------------------------------------
+
   String get toCsv {
     List<int> playerIds = players.map((p) => p.id).toList();
     return listInttoCsv(playerIds);
   }
+
+  //---------------------------------------------------------------
 
   @override
   String toString() {
     return 'PlayerSet{id: $id, playerCount: ${players.length}}';
   }
 
-
+  //---------------------------------------------------------------
 }

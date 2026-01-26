@@ -38,6 +38,8 @@ class DatabaseHelper {
  deleteDB();
  ************************************************************/
 
+
+
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, dbName);
     //    String path = "/data/user/0/com.example.scores/databases/scores.db";
@@ -70,8 +72,9 @@ class DatabaseHelper {
       CREATE TABLE game (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-                showFutureRoundsType TEXT DEFAULT "showNoFutureRounds",        
-        winCondition TEXT DEFAULT "highestScore"
+        showFutureRoundsType TEXT DEFAULT "showNoFutureRounds",        
+        winCondition TEXT DEFAULT "highestScore",
+        gameLengthType TEXT DEFAULT "variableLength"        
       )
     ''');
 
@@ -84,7 +87,7 @@ class DatabaseHelper {
         color INTEGER NOT NULL,
         icon INTEGER NOT NULL,
         FOREIGN KEY (game_id) REFERENCES game (id) ON DELETE CASCADE
-)    )
+      )
     ''');
 
     await db.execute('''
@@ -136,6 +139,7 @@ class DatabaseHelper {
         game_id INTEGER NOT NULL,
         player_set_id NOT NULL,
         match_date TEXT NOT NULL,        
+        location_id INTEGER REFERENCES location(id) ON DELETE SET NULL,
        FOREIGN KEY (game_id) REFERENCES game (id),
        FOREIGN KEY (player_set_id) REFERENCES player_set (id)       
       )
@@ -226,7 +230,7 @@ class DatabaseHelper {
 
     if (oldVersion < 9) {
       await db.execute('''
-    CREATE TABLE  player_sets(
+    CREATE TABLE  player_set(
       id INTEGER PRIMARY KEY
     )
   ''');
@@ -236,7 +240,7 @@ class DatabaseHelper {
       player_set_id INTEGER NOT NULL,
       player_id INTEGER NOT NULL,
       PRIMARY KEY (player_set_id, player_id),
-      FOREIGN KEY (player_set_id) REFERENCES player_sets(id) ON DELETE CASCADE,
+      FOREIGN KEY (player_set_id) REFERENCES player_set(id) ON DELETE CASCADE,
       FOREIGN KEY (player_id) REFERENCES player(id) ON DELETE CASCADE
   ''');
     }

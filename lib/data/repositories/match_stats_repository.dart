@@ -47,7 +47,7 @@ class MatchStatsRepository {
         MatchPlayerStatsRepository();
 
 //    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    saveStat(match.id, "ROUNDS", match.rounds.length.toString());
+    saveStat(match.id, "NUM_ROUNDS", match.rounds.length.toString());
 
     // List<int> playerIds = getWinningPlayers(match)
     //     .map((p) => p.id)
@@ -106,7 +106,6 @@ class MatchStatsRepository {
     return await db.insert(
       tableName,
       matchStat.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 

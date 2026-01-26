@@ -24,7 +24,7 @@ import 'package:scores/data/repositories/round_label_repository.dart';
 import 'package:scores/presentation/mixin/my_mixin.dart';
 import 'package:scores/presentation/screens/list_games_screen.dart';
 import 'package:scores/presentation/screens/list_players_screen.dart';
-import 'package:scores/presentation/screens/location_screen.dart';
+import 'package:scores/presentation/screens/list_locations_screen.dart';
 import 'package:scores/presentation/screens/match_stats_list_screen.dart';
 import 'package:scores/presentation/screens/test_screen.dart';
 import 'package:scores/utils/my_utils.dart';
@@ -33,7 +33,6 @@ import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/game.dart';
 import 'package:scores/presentation/screens/list_rounds_screen.dart';
 import 'package:scores/data/services/match_storage.dart';
-import 'package:sqflite/sqflite.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key});
@@ -56,6 +55,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   //  final dbHelper = DatabaseHelper.instance;
   final matchRepository = MatchRepository(
     PlayerSetRepository(),
+    LocationRepository(),
     MatchHistoryRepository(),
     MatchStatsRepository(),
     MatchPlayerStatsRepository()
@@ -64,6 +64,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   final gameRepository = GameRepository(RoundLabelRepository());
   final playerSetRepository = PlayerSetRepository();
   final matchStatsRepository = MatchStatsRepository();
+    final locationRepository = LocationRepository();
   final matchHistoryRepository = MatchHistoryRepository();
 
   //-----------------------------------------------------------------
@@ -203,13 +204,8 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
     final games = data['gamesList'];
 
     final ButtonStyle style = ElevatedButton.styleFrom(
-      textStyle: const TextStyle(fontSize: 20,
-      color: Colors.black,
-      ),
-      side: BorderSide(
-      color: Colors.black,
-      width: 2,
-    ),
+      textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+      side: BorderSide(color: Colors.black, width: 2),
     );
 
     List<Widget> gameButtons = [];
@@ -387,7 +383,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
       match = loadedMatch;
     }
     debugMsg("match.game is ${match.game.toString()}");
-
+    
     if (mounted) {
       await Navigator.push(
         context,
@@ -395,8 +391,9 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
           builder: (context) => ListRounds(
             match: match,
             matchRepository: matchRepository,
-            gameRepository: gameRepository,            
+            gameRepository: gameRepository,
             playerSetRepository: playerSetRepository,
+            locationRepository: locationRepository,
             matchStatsRepository: matchStatsRepository
           ),
         ),
@@ -419,7 +416,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
       lastNumPlayers = await storage.loadLastNumPlayers(gameName);
       debugMsg("lastNumPlayers $lastNumPlayers");
     } catch (e) {
-      debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", true);
+      debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", box: true);
     }
 
     if (lastNumPlayers > 0) {
@@ -428,7 +425,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
         loadedMatch = await storage.loadMatch(gameName, lastNumPlayers);
         debugMsg("Match at this point is ${loadedMatch.toString()}");
       } catch (e) {
-        debugMsg("_ScoresState loadGameData ${e.toString()}", true);
+        debugMsg("_ScoresState loadGameData ${e.toString()}", box: true);
       }
     }
 
@@ -447,7 +444,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
       lastNumPlayers = await storage.loadLastNumPlayers(gameName);
       debugMsg("lastNumPlayers $lastNumPlayers");
     } catch (e) {
-      debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", true);
+      debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", box: true);
     }
 
     return lastNumPlayers;
@@ -485,14 +482,13 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   void manageLocations() async {
     debugMsg("manageLocations");
 
-    final db = await openDatabase(dbName);
-    final locationRepository = LocationRepository(db);
+    final locationRepository = LocationRepository();
 
     if (mounted) {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => LocationScreen(repository: locationRepository),
+          builder: (context) => ListLocationsScreen(repository: locationRepository),
         ),
       );
     }

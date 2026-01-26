@@ -152,6 +152,9 @@ class _PlayerFormScreenState extends State<PlayerFormScreen> {
 
   Future<String?> _savePlayer() async {
     if (_formKey.currentState!.validate()) {
+
+      debugMsg("_savePlayer creatingNewPlayer $creatingNewPlayer");
+
       final playerName = _nameController.text;
 
       if (creatingNewPlayer) {
@@ -171,9 +174,10 @@ class _PlayerFormScreenState extends State<PlayerFormScreen> {
                       color: _selectedColour.toInt());
 
       if (creatingNewPlayer) {
-        playerRespository.insertPlayer(player);
+        player.id = await playerRespository.insertPlayer(player);
+        debugMsg("newly created player id ${player.id}");
       } else {
-        playerRespository.updatePlayer(player);
+        await playerRespository.updatePlayer(player);
       }
 
       // Return the person object to the previous screen

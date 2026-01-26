@@ -17,11 +17,10 @@ import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 class GameRepository {
-
   final dbHelper = DatabaseHelper.instance;
   final RoundLabelRepository _roundLabelRepository;
 
-    GameRepository(this._roundLabelRepository);
+  GameRepository(this._roundLabelRepository);
 
   // final Database db;
 
@@ -88,7 +87,7 @@ class GameRepository {
     //   return null; // no game type found with that id
     // }
 
-    debugMsg("result $result");
+    debugMsg("query result $result");
 
     final map = result.first;
 
@@ -103,7 +102,11 @@ class GameRepository {
       map['winCondition'] as String,
     );
 
-    game.roundLabels = await _roundLabelRepository.getByGameId(game.id??0);
+    game.gameLengthType = GameLengthType.values.byName(
+      map['gameLengthType'] as String,
+    );
+
+    game.roundLabels = await _roundLabelRepository.getByGameId(game.id ?? 0);
 
     return game;
   }
@@ -120,9 +123,8 @@ class GameRepository {
 
       Game game;
       for (Map<String, dynamic> gameMap in maps) {
-
         game = Game.fromMap(gameMap);
-        var roundLabels = await _roundLabelRepository.getByGameId(game.id??0);
+        var roundLabels = await _roundLabelRepository.getByGameId(game.id ?? 0);
         games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
       }
 
@@ -157,18 +159,26 @@ class GameRepository {
     debugMsg("updateGame game $game");
 
     return await db.transaction((txn) async {
-      db.update('game', game.toMap(), where: 'id = ?', whereArgs: [game.id]);
+      try {
+        debugMsg("${game.toMap()}",box: true);
+        db.update('game', game.toMap(), where: 'id = ?', whereArgs: [game.id]);
 
-      // Delete existing round labels if updating
-      await txn.delete(
-        'round_label',
-        where: 'game_id = ?',
-        whereArgs: [game.id],
-      );
+        // Delete existing round labels if updating
+        await txn.delete(
+          'round_label',
+          where: 'game_id = ?',
+          whereArgs: [game.id],
+        );
 
-      // Insert all round labels
-      for (final label in game.roundLabels) {
-        await txn.insert('round_label', {...label.toMap(), 'game_id': game.id});
+        // Insert all round labels
+        for (final label in game.roundLabels) {
+          await txn.insert('round_label', {
+            ...label.toMap(),
+            'game_id': game.id,
+          });
+        }
+      } on Exception catch (e) {
+        errorMsg(e.toString(), box: true);
       }
     });
   }

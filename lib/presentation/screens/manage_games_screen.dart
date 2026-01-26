@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:scores/data/repositories/game_repository.dart';
 import 'package:scores/data/models/game.dart';
 import 'package:scores/data/repositories/round_label_repository.dart';
-import 'package:scores/presentation/screens/game_form_screen.dart';
+import 'package:scores/presentation/screens/old/game_form_screen.dart';
 import 'package:scores/utils/my_utils.dart';
 
 class ManageGamesScreen extends StatefulWidget {

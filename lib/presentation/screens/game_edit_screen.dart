@@ -33,11 +33,12 @@ class GameEditScreen extends StatefulWidget {
 class _GameEditScreenState extends State<GameEditScreen> {
   late TextEditingController _nameController;
   late List<RoundLabel> _roundLabels;
+  
   ShowFutureRoundsType showFutureRoundsType =
       ShowFutureRoundsType.showNoFutureRounds;
-
   WinCondition winCondition = WinCondition.highestScore;
-
+  GameLengthType gameLengthType = GameLengthType.variableLength;
+  
   late GameRepository gameRespository;
 
   bool editExistingGame = false;
@@ -58,6 +59,8 @@ class _GameEditScreenState extends State<GameEditScreen> {
       _nameController = TextEditingController(text: game.name);
       showFutureRoundsType = game.showFutureRoundsType;
       winCondition = game.winCondition;
+      gameLengthType = game.gameLengthType;
+
       // Create a mutable copy of round labels
       _roundLabels = List<RoundLabel>.from(game.roundLabels);
     } else {
@@ -95,6 +98,7 @@ class _GameEditScreenState extends State<GameEditScreen> {
         name: _nameController.text.trim(),
         showFutureRoundsType: showFutureRoundsType,
         winCondition: winCondition,
+        gameLengthType: gameLengthType,
         roundLabels: _roundLabels,
       );
 
@@ -241,6 +245,31 @@ class _GameEditScreenState extends State<GameEditScreen> {
                     debugMsg("winCondition $newValue");
                     setState(() {
                       winCondition = newValue!;
+                    });
+                  },
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: DropdownButtonFormField<GameLengthType>(
+                  decoration: InputDecoration(
+                    labelText: 'Game Length?',
+                    border: OutlineInputBorder(),
+                  ),
+                  initialValue: gameLengthType,
+                  items: GameLengthType.values.map((
+                    GameLengthType type,
+                  ) {
+                    return DropdownMenuItem<GameLengthType>(
+                      value: type,
+                      child: Text(type.description),
+                    );
+                  }).toList(),
+                  onChanged: (GameLengthType? newValue) {
+                    debugMsg("GameLengthType $newValue");
+                    setState(() {
+                      gameLengthType = newValue!;
                     });
                   },
                 ),

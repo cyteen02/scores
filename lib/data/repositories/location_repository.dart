@@ -10,15 +10,21 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:scores/data/models/location.dart';
+import 'package:scores/data/repositories/database_helper.dart';
+import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 class LocationRepository {
-  final Database db;
+  final dbHelper = DatabaseHelper.instance;
 
-  LocationRepository(this.db);
+  LocationRepository();
+
+  //---------------------------------------------------------------------------
 
   // Create a new location
   Future<Location> create(Location location) async {
+    final db = await dbHelper.database;
+
     final id = await db.insert(
       'location',
       location.toMap(),
@@ -31,11 +37,9 @@ class LocationRepository {
 
   // Get a single location by ID
   Future<Location?> getById(int id) async {
-    final maps = await db.query(
-      'location',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final db = await dbHelper.database;
+
+    final maps = await db.query('location', where: 'id = ?', whereArgs: [id]);
 
     if (maps.isEmpty) {
       return null;
@@ -48,7 +52,11 @@ class LocationRepository {
 
   // Get all locations
   Future<List<Location>> getAll() async {
+    debugMsg("getAll");
+    final db = await dbHelper.database;
+    debugMsg("db $db");    
     final maps = await db.query('location', orderBy: 'name ASC');
+    debugMsg("maps $maps");
     return maps.map((map) => Location.fromMap(map)).toList();
   }
 
@@ -56,6 +64,7 @@ class LocationRepository {
 
   // Update an existing location
   Future<int> update(Location location) async {
+    final db = await dbHelper.database;
     return await db.update(
       'location',
       location.toMap(),
@@ -68,17 +77,15 @@ class LocationRepository {
 
   // Delete a location
   Future<int> delete(int id) async {
-    return await db.delete(
-      'location',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final db = await dbHelper.database;
+    return await db.delete('location', where: 'id = ?', whereArgs: [id]);
   }
 
   //-----------------------------------------------------------
 
   // Search locations by name
   Future<List<Location>> searchByName(String query) async {
+    final db = await dbHelper.database;
     final maps = await db.query(
       'location',
       where: 'name LIKE ?',
@@ -92,10 +99,10 @@ class LocationRepository {
 
   // Get count of all locations
   Future<int> count() async {
+    final db = await dbHelper.database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM location');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
- //-----------------------------------------------------------
-
+  //-----------------------------------------------------------
 }

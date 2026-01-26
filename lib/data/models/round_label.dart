@@ -65,7 +65,7 @@ class RoundLabel {
       'icon': icon,
     };
 
-    debugMsg(jsonString.toString(), true);
+    debugMsg(jsonString.toString(), box: true);
     return jsonString;
   }
   //---------------------------------------------------------------------------

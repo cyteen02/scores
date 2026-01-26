@@ -56,9 +56,30 @@ class Round with MyMixin {
     scores[player.id] = score;
   }
 
+//---------------------------------------------------------------------------
+
   void setScoreById(int id, int score) {
     scores[id] = score;
   }
+
+//---------------------------------------------------------------------------
+
+  List<int> getPlayersScores(List<Player> players) {
+
+    List<int> scoresList = [];
+
+    for ( Player p in players ) {
+      scoresList.add(scores[p.id]??0);
+    }
+
+    return scoresList;
+  }
+
+  //---------------------------------------------------------------------------
+
+  List<int> getPlayerIds() => scores.keys.toList();
+
+  //---------------------------------------------------------------------------
 
   List<int> getScores() {
     List<int> scoresList = [];
@@ -68,9 +89,7 @@ class Round with MyMixin {
     return scoresList;
   }
 
-  List<int> getPlayerIds() => scores.keys.toList();
-
-  //----------------------------------------------------------------
+    //----------------------------------------------------------------
 
   void updatePlayerScore(Player player, int score) {
     debugMsg("updatePlayerScore");

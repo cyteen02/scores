@@ -180,6 +180,13 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
                   ? Text('${game.roundLabels.length} rounds')
                   : Text('No fixed rounds'),
               Text(
+                "Game length: ${game.gameLengthType.description}",
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blue,
+                ),
+              ),
+              Text(
                 game.showFutureRoundsType.description,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,

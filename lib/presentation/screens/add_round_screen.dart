@@ -131,7 +131,7 @@ class _AddRoundScreenState extends State<AddRoundScreen> with MyMixin {
         ),
 
         Text(
-          round.getScore(player).toString(),
+          (round.getScore(player)??0).toString(),
           style: TextStyle(color: Colors.black, fontSize: 50),
           textAlign: TextAlign.center,
         ),

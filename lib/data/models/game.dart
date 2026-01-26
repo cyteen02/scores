@@ -30,12 +30,21 @@ enum WinCondition {
   const WinCondition(this.description);
 }
 
+enum GameLengthType {
+  variableLength('Variable'),
+  fixedLength('Fixed');
+
+  final String description;
+  const GameLengthType(this.description);
+}
+
 class Game with MyMixin {
   int? id;
   String name;
   List<RoundLabel> roundLabels;
   ShowFutureRoundsType showFutureRoundsType;
   WinCondition winCondition = WinCondition.highestScore;
+  GameLengthType gameLengthType = GameLengthType.variableLength;
 
   Game({
     this.id,
@@ -43,12 +52,14 @@ class Game with MyMixin {
     this.roundLabels = const [],
     this.winCondition = WinCondition.highestScore,
     this.showFutureRoundsType = ShowFutureRoundsType.showNoFutureRounds,
+    this.gameLengthType = GameLengthType.variableLength,
   });
 
   //-----------------------------------------------------------------
 
   bool fixedNumRounds() {
-    return roundLabels.isNotEmpty;
+    return gameLengthType == GameLengthType.fixedLength;
+    //    return roundLabels.isNotEmpty;
     // return showFutureRoundsType !=
     //         ShowFutureRoundsType.showNoFutureRounds;
   }
@@ -67,6 +78,7 @@ class Game with MyMixin {
       'name': name,
       'showFutureRoundsType': showFutureRoundsType.name,
       'winCondition': winCondition.name,
+      'gameLengthType': gameLengthType.name,
     };
   }
 
@@ -85,6 +97,7 @@ class Game with MyMixin {
         map['showFutureRoundsType'],
       ),
       winCondition: WinCondition.values.byName(map['winCondition']),
+      gameLengthType: GameLengthType.values.byName(map['gameLengthType']),
     );
   }
 
@@ -98,6 +111,7 @@ class Game with MyMixin {
       'roundLabels': roundLabels.map((label) => label.toJson()).toList(),
       'showFutureRoundsType': showFutureRoundsType.name,
       'winCondition': winCondition.name,
+      'gameLengthType': gameLengthType.name,
     };
   }
 
@@ -117,16 +131,30 @@ class Game with MyMixin {
         (e) => e.name == json['winCondition'],
         orElse: () => WinCondition.highestScore,
       ),
+      gameLengthType: GameLengthType.values.firstWhere(
+        (e) => e.name == json['gameLengthType'],
+        orElse: () => GameLengthType.variableLength,
+      ),
     );
   }
   //---------------------------------------------------------------------------
 
   // Create a copy with optional field updates
-  Game copyWith({int? id, String? name, List<RoundLabel>? roundLabels}) {
+  Game copyWith({
+    int? id,
+    String? name,
+    List<RoundLabel>? roundLabels,
+    ShowFutureRoundsType? showFutureRoundsType,
+    WinCondition? winCondition,
+    GameLengthType? gameLengthType,
+  }) {
     return Game(
       id: id ?? this.id,
       name: name ?? this.name,
       roundLabels: roundLabels ?? this.roundLabels,
+      winCondition: winCondition ?? this.winCondition,
+      showFutureRoundsType: showFutureRoundsType ?? this.showFutureRoundsType,
+      gameLengthType: gameLengthType ?? this.gameLengthType,
     );
   }
 
@@ -134,7 +162,7 @@ class Game with MyMixin {
 
   @override
   String toString() {
-    return "id $id name $name ${roundLabels.toString()} showFutureRoundsType $showFutureRoundsType winCondition $winCondition";
+    return "id $id name $name ${roundLabels.toString()} showFutureRoundsType $showFutureRoundsType winCondition $winCondition gameLengthType $gameLengthType";
   }
 
   //-----------------------------------------------------------------

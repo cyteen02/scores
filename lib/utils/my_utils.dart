@@ -11,7 +11,7 @@
 
 import 'package:flutter/material.dart';
 
-void debugMsg(String msg, [bool box = false]) {
+void debugMsg(String msg, {bool box = false}) {
   const String boxLine =
       ">> ----------------------------------------------------------";
 
@@ -22,7 +22,7 @@ void debugMsg(String msg, [bool box = false]) {
 
 //----------------------------------------------------------------
 
-void errorMsg(String msg, [bool box = false]) {
+void errorMsg(String msg, {bool box = false}) {
   const String boxLine =
       ">>***********************************************************";
 
