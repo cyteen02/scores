@@ -18,9 +18,9 @@ import 'package:sqflite/sqflite.dart';
 
 class GameRepository {
   final dbHelper = DatabaseHelper.instance;
-  final RoundLabelRepository _roundLabelRepository;
+  final RoundLabelRepository _roundLabelRepository = RoundLabelRepository();
 
-  GameRepository(this._roundLabelRepository);
+  GameRepository();
 
   // final Database db;
 
@@ -160,7 +160,7 @@ class GameRepository {
 
     return await db.transaction((txn) async {
       try {
-        debugMsg("${game.toMap()}",box: true);
+        debugMsg("${game.toMap()}", box: true);
         db.update('game', game.toMap(), where: 'id = ?', whereArgs: [game.id]);
 
         // Delete existing round labels if updating
@@ -171,9 +171,19 @@ class GameRepository {
         );
 
         // Insert all round labels
-        for (final label in game.roundLabels) {
+        // for (final roundLabel in game.roundLabels) {
+        //   await txn.insert('round_label', {
+        //     ...roundLabel.toMap(),
+        //     'game_id': game.id,
+        //   });
+        // }
+
+        for (final roundLabel in game.roundLabels) {
           await txn.insert('round_label', {
-            ...label.toMap(),
+            'name': roundLabel.name,
+            'description': roundLabel.description,
+            'color': roundLabel.color,
+            'icon': roundLabel.icon,
             'game_id': game.id,
           });
         }
@@ -244,6 +254,7 @@ class GameRepository {
             'name': game.name,
             'showFutureRoundsType': game.showFutureRoundsType.name,
             'winCondition': game.winCondition.name,
+            'gameLengthType': game.gameLengthType.name
           });
       // Delete existing round labels if updating
       if (game.id != null) {

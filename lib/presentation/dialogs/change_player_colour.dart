@@ -28,21 +28,7 @@ Future<bool> changePlayerColour(    BuildContext context, Player player) async {
     );
 
     return ( newColour != null );
-
-    // debugMsg("newColor $newColour");
-    // if (newColour != null) {
-    //   setState(() {
-    //     player.setColor(newColour);
-    //   });
-
-    //   final GameStorage storage = GameStorage();
-    //   try {
-    //     debugMsg("_ListScreenState changePlayerColour saving game");
-    //     storage.saveGame(widget.game);
-    //   } catch (e) {
-    //     debugMsg("_ListScreenState changePlayerColour ${e.toString()}", true);
-    //   }
-    // }
+   
   }
 
   //---------------------------------------------------------------

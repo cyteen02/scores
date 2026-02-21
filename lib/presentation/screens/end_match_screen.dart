@@ -13,7 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:scores/business/services/historic_stats_service.dart';
 import 'package:scores/business/services/match_stats_service.dart';
 import 'package:scores/data/extensions/int_extensions.dart';
+import 'package:scores/data/models/location.dart';
+import 'package:scores/data/models/match_history.dart';
 import 'package:scores/data/models/match_player_stats.dart';
+import 'package:scores/data/repositories/location_repository.dart';
+import 'package:scores/data/repositories/match_history_repository.dart';
 
 import 'package:scores/data/repositories/match_player_stats_repository.dart';
 import 'package:scores/data/repositories/match_repository.dart';
@@ -23,6 +27,7 @@ import 'package:scores/data/models/match.dart';
 
 import 'package:scores/data/models/player.dart';
 import 'package:scores/data/services/match_storage.dart';
+import 'package:scores/presentation/screens/show_graph.dart';
 import 'package:scores/utils/my_utils.dart';
 
 class EndMatchScreen extends StatefulWidget {
@@ -48,6 +53,9 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
   late MatchRepository matchRepository;
   late MatchStatsRepository matchStatsRepository;
 
+  LocationRepository locationRepository = LocationRepository();
+  MatchHistoryRepository matchHistoryRepository = MatchHistoryRepository();
+
   @override
   void initState() {
     debugMsg("_EndMatchScreenState initState");
@@ -60,13 +68,6 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
 
   //-------------------------------------------------------------------
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     appBar: AppBar(title: Text('${match.name} Endgame'), centerTitle: true),
-  //     body: Container(child: endGameScreen(match)),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,19 +78,28 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
-
           if (snapshot.hasError) {
             return Center(child: Text('Error loading data'));
           }
-
           final data = snapshot.data!;
           return _buildEndGameScreen(data);
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MatchScoreChartScreen(match: match),
+            ),
+          );
+        },
+        child: const Icon(Icons.show_chart),
+      ),
     );
   }
 
-  //-------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   Future<Map<String, dynamic>> _fetchEndMatchData() async {
     Map<String, dynamic> stats = {};
@@ -103,30 +113,26 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     stats['match_zero_scores'] = getNumMatchingScoresForPlayers(match, 0);
 
     debugMsg("get stats for previous matches");
-    // Get stats for previous matches for this game & players
-    //    MatchStatsRepository matchStatsRepository = MatchStatsRepository();
 
+    // Get previous matches for this game & players
+    List<MatchHistory> previousMatches = await matchHistoryRepository
+        .getByGameAndPlayerSet(match.gameId, match.playerSet.id??0);
+
+    List<Location> locations = await locationRepository.getAll();
+
+
+
+    // Get stats for previous matches for this game & players
     List<String> winnersList = await matchStatsRepository
-        .getWinnersByGamePlayers(match.game.name, match.playersCsv);
+        .getWinnersByGamePlayers(match.name, match.playersCsv);
     stats['winners'] = winnersList;
 
     MatchPlayerStatsRepository matchPlayerStatsRepository =
         MatchPlayerStatsRepository();
 
-    // Map<int, String> scoreStats = await matchPlayerStatsRepository
-    //     .getStatByGameIdAndPlayerSet(
-    //       match.game.id ?? 0,
-    //       match.playerSet.id ?? 0,
-    //       "SCORE",
-    //     );
-
-    // Map<int, int> playerScores = {
-    //   for (var entry in scoreStats.entries) entry.key: int.parse(entry.value),
-    // };
-
     List<MatchPlayerStats> matchPlayerStatsList =
         await matchPlayerStatsRepository.getByGameIdAndPlayerSet(
-          match.game.id ?? 0,
+          match.gameId,
           match.playerSet.id ?? 0,
         );
 
@@ -137,33 +143,6 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     stats.addAll(historicStats);
 
     return stats;
-
-    // statsList.clear();
-    //     for ( Player player in match.players ){
-    //       statsList[player.id??0] = maxScoreForPlayerId(match, player.id??0);
-    //     };
-    //     stats['match_max_scores'] = statsList;
-
-    //     ;
-
-    //     // return {
-    //     //   'winners': winnersList,
-    //     //   'minScores': minScores,
-    //     //   'maxScores': maxScores,
-    //     //   'totalScores': totalScores,
-    //     // };
-
-    //           ("Max round", (int id) => maxScoreForPlayerId(match, id)),
-    //           ("Ave score", (int id) => avgScoreForPlayerId(match, id)),
-    //           ("Num zeros", (int id) => numRoundsMatchingScore(match, id, 0)),
-
-    //     MatchStatsRepository matchStatsRepository = MatchStatsRepository();
-
-    //     Map<String, dynamic> historicStats = {};
-
-    //   allStats.addAll(historicStats);
-
-    //     return allStats;
   }
 
   //-------------------------------------------------------------------
@@ -195,7 +174,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     rows.add(SizedBox(height: 50));
 
     rows.add(
-      historicalStatsTable(
+      historicStatsTable(
         data['numWins'],
         data['minScores'],
         data['maxScores'],
@@ -372,7 +351,7 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
   // }
   //-------------------------------------------------------------------
 
-  Widget historicalStatsTable(
+  Widget historicStatsTable(
     Map<int, int> numWins,
     Map<int, int> minScores,
     Map<int, int> maxScores,
@@ -385,19 +364,6 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     List<Widget> rows = [];
 
     rows.add(Center(child: Text("Stats from previous matches:")));
-
-    //    Map<int, int> numWins = {};
-
-    // // Initialize all players with 0 wins
-    // for (Player player in match.playerSet.players) {
-    //   numWins[player.id] = 0;
-    // }
-
-    // // Count wins for each match
-    // for (String winners in winnersList) {
-    //   int winnerId = int.tryParse(winners) ?? 0;
-    //   numWins[winnerId] = numWins[winnerId]! + 1;
-    // }
 
     // put the data into a table
     List<DataRow> dataRows = [];
@@ -464,6 +430,70 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
     );
 
     return Column(children: rows);
+  }
+
+//-------------------------------------------------------------------
+
+  Widget historicLocationStatsTable(
+    List<Location> locations,
+    Map<int, int> numWins,
+  ) {
+    if (numWins.isEmpty) {
+      return Text("No location data");
+    }
+
+    List<Widget> rows = [];
+
+    rows.add(Center(child: Text("Player wins by location:")));
+
+    // put the data into a table
+    List<DataRow> dataRows = [];
+
+    List<DataColumn> dataColumns = [];
+    dataColumns.add(DataColumn(label: Text("")));
+    for (Player player in match.players) {
+      dataColumns.add(
+        DataColumn(
+          label: Text(
+            player.name,
+            style: TextStyle(color: player.color.toColor()),
+          ),
+        ),
+      );
+    }
+
+
+    List<DataCell> dataCellList = [];
+
+    for ( Location location in locations ) {
+      dataCellList.add(DataCell(Text(location.name, style: TextStyle(color: location.color.toColor()),)));
+
+    List <Player> players = [];
+    for (Player player in players) {
+      dataCellList.add(DataCell(Text(numWins[player.id].toString())));
+    }
+
+    dataRows.add(DataRow(cells: dataCellList));
+  }
+
+      rows.add(
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
+              columns: dataColumns,
+              rows: dataRows,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Column(children: rows);
+
   }
 
   //-------------------------------------------------------------------

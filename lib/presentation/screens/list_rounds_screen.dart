@@ -32,6 +32,8 @@ import 'package:scores/presentation/dialogs/pick_num_players.dart';
 import 'package:scores/presentation/dialogs/pick_one_player_dialog.dart';
 import 'package:scores/presentation/screens/end_match_screen.dart';
 import 'package:scores/presentation/screens/next_round_screen.dart';
+import 'package:scores/presentation/screens/show_graph.dart';
+import 'package:scores/presentation/screens/stats_screen.dart';
 import 'package:scores/presentation/widgets/list_rounds_bottom_nav_bar.dart';
 import 'package:scores/utils/my_utils.dart';
 
@@ -98,34 +100,36 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
   @override
   void initState() {
-    debugMsg("initState", box: true);
+    debugMsg("_ListRoundsStateinitState", box: true);
     super.initState();
 
     debugMsg("copying repositories");
     matchRepository = widget.matchRepository;
     gameRepository = widget.gameRepository;
     playerSetRepository = widget.playerSetRepository;
-//   locationRepository = widget.locationRepository;
+    //   locationRepository = widget.locationRepository;
     matchStatsRepository = widget.matchStatsRepository;
 
     debugMsg("initState widget.match ${widget.match}");
     match = widget.match; // Copy to local state
-    debugMsg("starting match.game ${match.game.toString()}");
+    debugMsg("starting match.gameId ${match.gameId}");
 
     //    game = Game.name(match.name);
 
     // If fixed length, but no rounds set up yet - do this now
-    if ((match.game.gameLengthType == GameLengthType.fixedLength) &&
+    if ((match.gameLengthType == GameLengthType.fixedLength) &&
+        (match.showFutureRoundsType() ==
+            ShowFutureRoundsType.showAllFutureRounds) &&
         (match.numRoundsPlayed() == 0)) {
       match.initAllRounds();
     }
 
-    debugMsg("starting match.game ${match.game.toString()}");
+    debugMsg("starting match.gameId ${match.gameId}");
     if (match.useRoundLabels()) {
-      roundLabelsWidth = calculateRoundLabelsWidth(match.game.roundLabels);
+      roundLabelsWidth = calculateRoundLabelsWidth(match.roundLabels);
     } else {
       debugMsg("not using round labels");
-    }  
+    }
   }
 
   //---------------------------------------------------------------
@@ -160,7 +164,12 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
             icon: const Icon(Icons.location_on),
             onPressed: () async {
               await _loadLocations();
-              Location? result = await showLocationPickerDialog(context, locations);
+
+              if (!context.mounted) return;
+              Location? result = await showLocationPickerDialog(
+                context,
+                locations,
+              );
               if (result?.name == 'NONE') {
                 setState(() {
                   match.location = null;
@@ -176,7 +185,9 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       ),
       body: Container(child: listRounds(context)),
       floatingActionButton:
-          match.game.gameLengthType == GameLengthType.fixedLength
+          (match.gameLengthType == GameLengthType.fixedLength &&
+              match.showFutureRounds ==
+                  ShowFutureRoundsType.showAllFutureRounds)
           ? null
           : FloatingActionButton(
               onPressed: () {
@@ -209,35 +220,51 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     if (match.players.isNotEmpty) {
       rows.add(playersRow(context, match.players));
     } else {
-      rows.add(RoundRow(row: Center(child: Text("Add some players"))));
+      rows.add(
+        RoundRow(
+          row: GestureDetector(
+            onTap: _handlePlayersButton,
+
+            child: Center(
+              child: Text(
+                "Add some players",
+                style: TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     for (int r = 0; r < match.rounds.length; r++) {
       RoundLabel? roundLabel;
-      if (match.game.useRoundLabels()) {
-        roundLabel = match.game.roundLabels[r];
+      if (match.useRoundLabels()) {
+        roundLabel = match.roundLabels[r];
       }
       rows.add(roundScoresRow(context, roundLabel, match.rounds[r]));
     }
 
     if ((match.showFutureRoundsType() !=
             ShowFutureRoundsType.showNoFutureRounds) &&
-        (match.rounds.length >= match.game.roundLabels.length) &&
-        (match.game.gameLengthType != GameLengthType.fixedLength)) {
+        (match.rounds.length >= match.roundLabels.length) &&
+        (match.gameLengthType != GameLengthType.fixedLength)) {
       rows.add(endMatchRow());
-    } else if ( (match.showFutureRoundsType() ==
-        ShowFutureRoundsType.showNextFutureRound) && 
-        (match.rounds.length < match.game.roundLabels.length)) {
+    } else if ((match.showFutureRoundsType() ==
+            ShowFutureRoundsType.showNextFutureRound) &&
+        (match.rounds.length < match.roundLabels.length)) {
       rows.add(
         RoundRow(
-          roundLabel: match.game.roundLabels[match.rounds.length],
+          roundLabel: match.roundLabels[match.rounds.length],
           row: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Center(
               child: InkWell(
                 onTap: showNextRoundScreen,
                 child: Text(
-                  "Next round is ${match.game.roundLabels[match.rounds.length].name}",
+                  "Next round is ${match.roundLabels[match.rounds.length].name}",
                   style: TextStyle(fontSize: 24),
                 ),
               ),
@@ -249,10 +276,10 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         ShowFutureRoundsType.showAllFutureRounds) {
       for (
         int index = match.rounds.length;
-        index < match.game.roundLabels.length;
+        index < match.roundLabels.length;
         index++
       ) {
-        rows.add(futureRoundsRow(context, match.game.roundLabels[index]));
+        rows.add(futureRoundsRow(context, match.roundLabels[index]));
       }
     }
 
@@ -296,6 +323,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   RoundRow playersRow(BuildContext context, List<Player> players) {
     List<Widget> playerNames = [];
 
+    final rotateBoxquarterTurns = players.length > 3 ? 3 : 0;
+
     for (Player player in players) {
       debugMsg(
         "playersRow adding ${player.name} colour ${player.color} to the row",
@@ -318,10 +347,18 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
               },
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  player.name,
-                  style: TextStyle(color: player.color.toColor(), fontSize: 30),
-                  textAlign: TextAlign.center,
+                child: Center(
+                  child: RotatedBox(
+                    quarterTurns: rotateBoxquarterTurns,
+                    child: Text(
+                      player.name,
+                      style: TextStyle(
+                        color: player.color.toColor(),
+                        fontSize: 30,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ),
             );
@@ -494,6 +531,27 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       labelText = roundLabel.name;
     }
 
+    Text avatarText = Text(
+      labelText,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+
+    Widget avatarWidget = avatarText;
+
+    if (roundLabel != null) {
+      if (roundLabel.description != null) {
+        avatarWidget = Tooltip(
+          message: roundLabel.description ?? '',
+          triggerMode: TooltipTriggerMode.tap,
+          child: avatarText,
+        );
+      }
+    }
     return Container(
       width: roundLabelsWidth,
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -505,15 +563,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         ),
         //      borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(
-        labelText,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: avatarWidget,
     );
   }
 
@@ -598,19 +648,14 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     List<Widget> textItems = [];
     final scoresList = round.getPlayersScores(match.players);
 
-if ( scoresList.isEmpty ) {
-    textItems.add(
+    if (scoresList.isEmpty) {
+      textItems.add(
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text("",
-
-
-            style: TextStyle(fontSize: 24),
-          ),
+          child: Text("", style: TextStyle(fontSize: 24)),
         ),
       );
-    
-}
+    }
 
     for (var item = 0; item < scoresList.length; item++) {
       textItems.add(
@@ -665,8 +710,8 @@ if ( scoresList.isEmpty ) {
   Future<void> addButtonPressed(BuildContext context) async {
     debugMsg("addButtonPressed ... waiting");
 
-    if (match.game.fixedNumRounds()) {
-      if (match.rounds.length >= match.game.roundLabels.length) {
+    if (match.fixedNumRounds) {
+      if (match.rounds.length >= match.roundLabels.length) {
         // the match has ended - no more round adds!
         showPopupMessage(context, "Match ended - no more scores to add");
         return;
@@ -826,7 +871,7 @@ if ( scoresList.isEmpty ) {
       MaterialPageRoute(
         builder: (context) => NextRoundScreen(
           match: match,
-          nextRoundLabel: match.game.roundLabels[match.rounds.length],
+          nextRoundLabel: match.roundLabels[match.rounds.length],
         ),
       ),
     );
@@ -870,17 +915,30 @@ if ( scoresList.isEmpty ) {
       case ListRoundsBottomNavBarEnum.players:
         debugMsg("calling pickNumPlayers");
 
-        Match? newMatch = await playersButtonTapped();
-        if (newMatch != null) {
-          setState(() {
-            match = newMatch.copyWith(
-              id: newMatch.id,
-              game: newMatch.game,
-              playerSet: newMatch.playerSet,
-              rounds: newMatch.rounds,
-            );
-            debugMsg("after playersButtonTapped match: $match");
-          });
+        await _handlePlayersButton();
+
+      case ListRoundsBottomNavBarEnum.stats:
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StatsScreen(
+                match: match,
+                matchRepository: matchRepository,
+                matchStatsRepository: matchStatsRepository,
+              ),
+            ),
+          );
+        }
+
+      case ListRoundsBottomNavBarEnum.graph:
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MatchScoreChartScreen(match: match),
+            ),
+          );
         }
 
       case ListRoundsBottomNavBarEnum.end:
@@ -912,8 +970,6 @@ if ( scoresList.isEmpty ) {
         });
 
       case ListRoundsBottomNavBarEnum.clear:
-        debugMsg("calling MyUtils.showDialogBox 2");
-
         MyMixin.showDialogBox(
           context,
           "Clear scores?",
@@ -936,6 +992,24 @@ if ( scoresList.isEmpty ) {
     // setState(() {
     //   _bnbSelectedIndex = index;
     // });
+  }
+
+  //---------------------------------------------------------------
+
+  Future<void> _handlePlayersButton() async {
+    Match? newMatch = await playersButtonTapped();
+    if (newMatch != null) {
+      setState(() {
+        match = newMatch.copyWith(
+          id: newMatch.id,
+          gameId: newMatch.gameId,
+          playerSet: newMatch.playerSet,
+          rounds: newMatch.rounds,
+        );
+        match.reloadGame();
+        debugMsg("after playersButtonTapped match: $match");
+      });
+    }
   }
 
   //---------------------------------------------------------------
@@ -979,7 +1053,8 @@ if ( scoresList.isEmpty ) {
   Future<bool> resetMatch(BuildContext context) async {
     // Reload the game defintion and reset the scores
 
-    match.game = await gameRepository.getGameByName(match.game.name);
+    // match.game = await gameRepository.getGameByName(match.game.name);
+    match.reloadGame();
 
     PlayerSet? loadedPlayerSet = await playerSetRepository.getById(
       match.playerSet.id ?? 0,
@@ -1076,14 +1151,14 @@ if ( scoresList.isEmpty ) {
       return null;
     }
 
-    Match? savedMatch = await loadMatchData(match.game.name, newNumPlayers);
+    Match? savedMatch = await loadMatchData(match.gameId, newNumPlayers);
 
     if (savedMatch != null) {
       debugMsg("using saved match data");
 
       Match newMatch = match.copyWith(
         id: savedMatch.id,
-        game: savedMatch.game,
+        gameId: savedMatch.gameId,
         playerSet: savedMatch.playerSet,
         rounds: savedMatch.rounds,
       );
@@ -1099,6 +1174,7 @@ if ( scoresList.isEmpty ) {
     final playerRespository = PlayerRepository();
     List<Player> allPlayers = await playerRespository.getAllPlayers();
 
+    if (!context.mounted) return null;
     List<Player> newPlayers = await pickMultiplePlayersDialog(
       context,
       allPlayers,
@@ -1127,7 +1203,7 @@ if ( scoresList.isEmpty ) {
 
     Match newMatch = match.copyWith(
       id: match.id,
-      game: match.game,
+      gameId: match.gameId,
       playerSet: playerSet,
     );
 
@@ -1287,14 +1363,14 @@ if ( scoresList.isEmpty ) {
 
   //---------------------------------------------------------------
 
-  Future<Match?> loadMatchData(String gameName, int numPlayers) async {
+  Future<Match?> loadMatchData(int gameId, int numPlayers) async {
     debugMsg("_ScoresState loadMatchData");
     final MatchStorage storage = MatchStorage();
 
     Match? match;
 
     try {
-      match = await storage.loadMatch(gameName, numPlayers);
+      match = await storage.loadMatch(gameId, numPlayers);
 
       debugMsg("Match at this point is ${match.toString()}");
     } catch (e) {
@@ -1314,6 +1390,6 @@ if ( scoresList.isEmpty ) {
     locations = await widget.locationRepository.getAll();
     setState(() {});
   }
+
   //---------------------------------------------------------------------------
-  
 }

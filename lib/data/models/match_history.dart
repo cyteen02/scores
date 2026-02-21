@@ -13,12 +13,14 @@ class MatchHistory {
   int matchId;
   int gameId;
   int playerSetId;
+  int? locationId;
   DateTime matchDate;
 
   MatchHistory({
     required this.matchId,
     required this.gameId,
     required this.playerSetId,
+    required this.locationId,
     DateTime? matchDate,
   }) : matchDate = matchDate ?? DateTime.now();
 
@@ -36,6 +38,7 @@ class MatchHistory {
       matchId: map['match_id'] as int,
       gameId: map['game_id'] as int,
       playerSetId: map['player_set_id'] as int,
+      locationId: map['location_id'] as int?,      
       matchDate: DateTime.parse(map['match_date'] as String),
     );
   }

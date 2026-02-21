@@ -49,30 +49,35 @@ class MatchRepository {
     debugMsg("matchRepository saveMatch matchId ${match.id}");
 
     // Save the player set
-
-    int playerSetId;
-    if (!await playerSetRepository.exists(match.playerSet.id ?? 0)) {
-      playerSetId = await playerSetRepository.insert(match.playerSet);
-    } else {
-      playerSetId = match.playerSet.id ?? 0;
-    }
-
-    matchHistoryRepository.insert(
-      MatchHistory(
-        matchId: match.id,
-        gameId: match.game.id ?? 0,
-        playerSetId: playerSetId,
-      ),
-    );
-
-    matchStatsRepository.saveStats(match);
-
-    //    await _saveMatchStats(matchId, match);
-
-    // Calculate and save player stats
-    //    await _savePlayerStats(matchId, match);
-
-    return match.id;
+    try {
+  int playerSetId;
+  if (!await playerSetRepository.exists(match.playerSet.id ?? 0)) {
+    playerSetId = await playerSetRepository.insert(match.playerSet);
+  } else {
+    playerSetId = match.playerSet.id ?? 0;
+  }
+  
+  await matchHistoryRepository.insert(
+    MatchHistory(
+      matchId: match.id,
+      gameId: match.gameId,
+      playerSetId: playerSetId,
+      locationId: match.location?.id,
+    ),
+  );
+  
+  await matchStatsRepository.saveStats(match);
+  
+  //    await _saveMatchStats(matchId, match);
+  
+  // Calculate and save player stats
+  //    await _savePlayerStats(matchId, match);
+  
+  return match.id;
+} on Exception catch (e) {
+      debugMsg("ERROR saving match: $e");
+    rethrow;
+}
   }
 
   //--------------------------------------------------------------

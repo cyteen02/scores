@@ -33,12 +33,14 @@ class GameEditScreen extends StatefulWidget {
 class _GameEditScreenState extends State<GameEditScreen> {
   late TextEditingController _nameController;
   late List<RoundLabel> _roundLabels;
-  
+
   ShowFutureRoundsType showFutureRoundsType =
       ShowFutureRoundsType.showNoFutureRounds;
+
   WinCondition winCondition = WinCondition.highestScore;
+
   GameLengthType gameLengthType = GameLengthType.variableLength;
-  
+
   late GameRepository gameRespository;
 
   bool editExistingGame = false;
@@ -258,9 +260,7 @@ class _GameEditScreenState extends State<GameEditScreen> {
                     border: OutlineInputBorder(),
                   ),
                   initialValue: gameLengthType,
-                  items: GameLengthType.values.map((
-                    GameLengthType type,
-                  ) {
+                  items: GameLengthType.values.map((GameLengthType type) {
                     return DropdownMenuItem<GameLengthType>(
                       value: type,
                       child: Text(type.description),
@@ -275,103 +275,111 @@ class _GameEditScreenState extends State<GameEditScreen> {
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: DropdownButtonFormField<ShowFutureRoundsType>(
-                  decoration: InputDecoration(
-                    labelText: 'Show Rounds Ahead?',
-                    border: OutlineInputBorder(),
+              if (gameLengthType == GameLengthType.fixedLength)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: DropdownButtonFormField<ShowFutureRoundsType>(
+                    decoration: InputDecoration(
+                      labelText: 'Show Rounds Ahead?',
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: showFutureRoundsType,
+                    items: ShowFutureRoundsType.values.map((
+                      ShowFutureRoundsType type,
+                    ) {
+                      return DropdownMenuItem<ShowFutureRoundsType>(
+                        value: type,
+                        child: Text(type.description),
+                      );
+                    }).toList(),
+                    onChanged: (ShowFutureRoundsType? newValue) {
+                      debugMsg("showFutureRoundsType $newValue");
+                      setState(() {
+                        showFutureRoundsType = newValue!;
+                      });
+                    },
                   ),
-                  initialValue: showFutureRoundsType,
-                  items: ShowFutureRoundsType.values.map((
-                    ShowFutureRoundsType type,
-                  ) {
-                    return DropdownMenuItem<ShowFutureRoundsType>(
-                      value: type,
-                      child: Text(type.description),
-                    );
-                  }).toList(),
-                  onChanged: (ShowFutureRoundsType? newValue) {
-                    debugMsg("showFutureRoundsType $newValue");
-                    setState(() {
-                      showFutureRoundsType = newValue!;
-                    });
-                  },
                 ),
-              ),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Round Labels (${_roundLabels.length})',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    TextButton.icon(
-                      onPressed: _addRoundLabel,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Label'),
-                    ),
-                  ],
+              if (gameLengthType == GameLengthType.fixedLength)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Round Labels (${_roundLabels.length})',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      TextButton.icon(
+                        onPressed: _addRoundLabel,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Label'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _roundLabels.isEmpty
-                    ? const Center(
-                        child: Text('No round labels yet. Add one above!'),
-                      )
-                    : ReorderableListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: _roundLabels.length,
-                        onReorder: (oldIndex, newIndex) {
-                          setState(() {
-                            if (newIndex > oldIndex) {
-                              newIndex -= 1;
-                            }
-                            final item = _roundLabels.removeAt(oldIndex);
-                            _roundLabels.insert(newIndex, item);
-                          });
-                        },
-                        itemBuilder: (context, index) {
-                          final label = _roundLabels[index];
-                          return Card(
-                            key: ValueKey(label.hashCode),
-                            margin: const EdgeInsets.only(bottom: 8.0),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: label.color.toColor(),
-                                child: Icon(
-                                  label.icon.toIcon(),
-                                  color: Colors.white,
+              if (gameLengthType == GameLengthType.fixedLength)
+                Expanded(
+                  child: _roundLabels.isEmpty
+                      ? const Center(
+                          child: Text('No round labels yet. Add one above!'),
+                        )
+                      : ReorderableListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: _roundLabels.length,
+                          onReorder: (oldIndex, newIndex) {
+                            setState(() {
+                              if (newIndex > oldIndex) {
+                                newIndex -= 1;
+                              }
+                              final item = _roundLabels.removeAt(oldIndex);
+                              _roundLabels.insert(newIndex, item);
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            final label = _roundLabels[index];
+                            return ReorderableDragStartListener(
+                              index: index,
+                              key: ValueKey(label.id ?? label.hashCode),
+                              child: Card(
+                                key: ValueKey(label.id ?? label.hashCode),
+                                margin: const EdgeInsets.only(bottom: 8.0),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: label.color.toColor(),
+                                    child: Icon(
+                                      label.icon.toIcon(),
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  title: Text(label.name),
+                                  subtitle: label.description != null
+                                      ? Text(label.description!)
+                                      : null,
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit),
+                                        onPressed: () => _editRoundLabel(index),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () =>
+                                            _deleteRoundLabel(index),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              title: Text(label.name),
-                              subtitle: label.description != null
-                                  ? Text(label.description!)
-                                  : null,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => _editRoundLabel(index),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () => _deleteRoundLabel(index),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                            );
+                          },
+                        ),
+                ),
             ],
           ),
         ),

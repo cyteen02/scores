@@ -23,8 +23,12 @@
 // for player playing this game, irrespective of who their oponents are
 //
 
+import 'package:scores/data/models/location.dart';
+import 'package:scores/data/models/match_history.dart';
 import 'package:scores/data/models/match_player_stats.dart';
 import 'package:scores/utils/my_utils.dart';
+
+//---------------------------------------------------------------------------
 
 Map<String, dynamic> calcMatchHistoricStats(
   List<MatchPlayerStats> matchPlayerStatsList,
@@ -78,3 +82,17 @@ Map<String, dynamic> calcMatchHistoricStats(
     'totalScores': totalScores,
   };
 }
+
+//---------------------------------------------------------------------------
+
+Map<String, dynamic> calcMatchLocationStats(
+  List<MatchHistory> previousMatches,
+  List<Location> locations,
+) {
+  Map<String, dynamic> stats = {};
+  for (MatchHistory matchHistory in previousMatches) {}
+
+  return stats;
+}
+
+//---------------------------------------------------------------------------

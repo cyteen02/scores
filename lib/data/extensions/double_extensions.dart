@@ -5,17 +5,15 @@
 *
 * You may not use, distribute and modify this code under any circumstances
 *
-* Created: 01/17/2026
+* Created: 01/31/2026
 *
 *----------------------------------------------------------------------------*/
 
-import 'package:flutter/material.dart';
 
-extension IconExtensions on IconData {
-  int toInt() => codePoint;
+extension DoubleIsIntegerExtension on double {
+  bool isInteger() {
+    return this == this.roundToDouble();
+  }
 }
 
-extension IntToIconData on int {
-  IconData toIcon() => IconData(this, fontFamily: 'MaterialIcons');
-}
-
+//---------------------------------------------------------------------------

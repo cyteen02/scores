@@ -129,6 +129,8 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
   Widget gameDismissable(Game game, int index) {
     debugMsg("gameDismissable index $index");
 
+    debugMsg("gameDismissable game $game");
+
     return Dismissible(
       key: Key(game.name + index.toString()),
       direction: DismissDirection.endToStart,
@@ -176,25 +178,27 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              game.fixedNumRounds()
-                  ? Text('${game.roundLabels.length} rounds')
-                  : Text('No fixed rounds'),
-              Text(
-                "Game length: ${game.gameLengthType.description}",
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blue,
-                ),
-              ),
-              Text(
-                game.showFutureRoundsType.description,
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blue,
-                ),
-              ),
               Text(
                 "Win condition: ${game.winCondition.description}",
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blue,
+                ),
+              ),
+              Text(
+                ( game.gameLengthType == GameLengthType.variableLength 
+                  ? "Game length: ${game.gameLengthType.description}"
+                  : "Game length: ${game.gameLengthType.description} - ${game.roundLabels.length} rounds"
+                ),
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blue,
+                ),
+              ),
+
+              if ( game.gameLengthType == GameLengthType.fixedLength ) 
+              Text(
+                game.showFutureRoundsType.description,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.blue,

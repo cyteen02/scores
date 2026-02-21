@@ -42,7 +42,7 @@ class MatchStatsRepository {
 
   //-----------------------------------------------------------------
 
-  void saveStats(Match match) {
+  Future<void> saveStats(Match match) async {
     MatchPlayerStatsRepository matchPlayerStatsRepository =
         MatchPlayerStatsRepository();
 
@@ -54,7 +54,7 @@ class MatchStatsRepository {
     //     .toList();
         
     for (Player p in getWinningPlayers(match)){
-      matchPlayerStatsRepository.savePlayerStat(
+      await matchPlayerStatsRepository.savePlayerStat(
         match.id,
         p.id,
         "WINNER",
@@ -66,25 +66,25 @@ class MatchStatsRepository {
     // saveStat(match.id, "WINNING_PLAYERS", listInttoCsv(playerIds));
 
     for (Player p in match.playerSet.players) {
-      matchPlayerStatsRepository.savePlayerStat(
+      await matchPlayerStatsRepository.savePlayerStat(
         match.id,
         p.id,
         "SCORE",
         totalScoreForPlayerId(match, p.id).toString(),
       );
-      matchPlayerStatsRepository.savePlayerStat(
+      await matchPlayerStatsRepository.savePlayerStat(
         match.id,
         p.id,
         "MAX_ROUND_SCORE",
         maxScoreForPlayerId(match, p.id).toString(),
       );
-      matchPlayerStatsRepository.savePlayerStat(
+      await matchPlayerStatsRepository.savePlayerStat(
         match.id,
         p.id,
         "AVG_ROUND_SCORE",
         avgScoreForPlayerId(match, p.id).toString(),
       );
-      matchPlayerStatsRepository.savePlayerStat(
+      await matchPlayerStatsRepository.savePlayerStat(
         match.id,
         p.id,
         "ROUNDS_SCORING_ZERO",

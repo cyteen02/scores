@@ -212,7 +212,7 @@ In this match:
   //-----------------------------------------------------------------
 
   List<Player> getWinningPlayers(Match match) {
-    if (match.game.winCondition == WinCondition.highestScore) {
+    if (match.winCondition == WinCondition.highestScore) {
       return getHighestScorePlayers(match);
     } else {
       return getLowestScorePlayers(match);

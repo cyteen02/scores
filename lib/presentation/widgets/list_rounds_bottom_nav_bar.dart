@@ -9,18 +9,19 @@
 *
 *----------------------------------------------------------------------------*/
 
-
 import 'package:flutter/material.dart';
 import 'package:scores/data/models/match.dart';
 
 enum ListRoundsBottomNavBarEnum {
   players('Players', Icons.people),
-  end('The End', Icons.save),
+  stats('Stats', Icons.query_stats),
+  graph('Graph', Icons.show_chart),
+  end('Game End', Icons.save),
   clear('Clear', Icons.clear);
 
   final String label;
   final IconData icon;
-  
+
   const ListRoundsBottomNavBarEnum(this.label, this.icon);
 }
 
@@ -39,24 +40,24 @@ class ListRoundsBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+List<BottomNavigationBarItem> items = ListRoundsBottomNavBarEnum.values
+          .map(
+            (tab) =>
+                BottomNavigationBarItem(icon: Icon(tab.icon), label: tab.label),
+          )
+          .toList();
+
     return BottomNavigationBar(
-  items: ListRoundsBottomNavBarEnum.values.map((tab) => BottomNavigationBarItem(
-    icon: Icon(tab.icon),
-    label: tab.label,
-  )).toList(),
-      // items: const <BottomNavigationBarItem>[
-      //   BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Players'),
-      //   BottomNavigationBarItem(icon: Icon(Icons.save), label: 'The End'),
-      //   BottomNavigationBarItem(icon: Icon(Icons.clear), label: 'Clear'),
-      // ],
+         type: BottomNavigationBarType.fixed,
+   showUnselectedLabels: true,
+      items:items,
       currentIndex: currentIndex,
-      selectedItemColor: Colors.blue,
+      fixedColor: Colors.black,
       onTap: ((int index) {
-          onItemTapped(context, index, match);
+        onItemTapped(context, index, match);
       }),
     );
   }
 
   //---------------------------------------------------------------
-
 }

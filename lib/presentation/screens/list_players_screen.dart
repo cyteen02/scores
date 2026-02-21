@@ -142,18 +142,6 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
 
   //------------------------------------------------------------------
 
-  // void _showSnackBar(String message, {SnackBarAction? action}) {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Text(message),
-  //       action: action,
-  //       duration: const Duration(seconds: 3),
-  //     ),
-  //   );
-  // }
-
-  //------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,31 +217,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
                   confirmDismiss: (direction) async {
                     return await _confirmDelete(index);
                   },
-                  // return await showDialog(
-                  //   context: context,
-                  //   builder: (BuildContext context) {
-                  //     return AlertDialog(
-                  //       title: const Text('Confirm Delete'),
-                  //       content: Text(
-                  //         'Are you sure you want to delete ${player.name}?',
-                  //       ),
-                  //       actions: [
-                  //         TextButton(
-                  //           onPressed: () => Navigator.of(context).pop(false),
-                  //           child: const Text('CANCEL'),
-                  //         ),
-                  //         TextButton(
-                  //           onPressed: () => Navigator.of(context).pop(true),
-                  //           child: const Text(
-                  //             'DELETE',
-                  //             style: TextStyle(color: Colors.red),
-                  //           ),
-                  //         ),
-                  //       ],
-                  //     );
-                  //   },
-                  // );
-                  // },
+
                   onDismissed: (direction) {
                     _deletePlayer(index);
                   },
@@ -274,21 +238,7 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
                               ),
                             ),
                       title: Text(player.name),
-                      subtitle: Row(
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: player.color.toColor(),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Favourite colour'),
-                        ],
-                      ),
+
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _editPlayer(index),
                     ),
@@ -305,27 +255,3 @@ class _PlayersListScreenState extends State<PlayersListScreen> {
 
   //--------------------------------------------------------------
 }
-
-// // class Person {
-// //   String name;
-// //   Color favouriteColour;
-// //   String? photoPath;
-
-// //   Person({required this.name, required this.favouriteColour, this.photoPath});
-// // }
-
-// // Placeholder PersonForm widget - use your actual PersonForm here
-// class PersonForm extends StatelessWidget {
-//   final Person? person;
-//   const PersonForm({Key? key, this.person}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(person == null ? 'New Person' : 'Edit Person'),
-//       ),
-//       body: const Center(child: Text('Person Form Goes Here')),
-//     );
-//   }
-// }

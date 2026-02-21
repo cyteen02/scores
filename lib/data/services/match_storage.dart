@@ -22,36 +22,36 @@ import 'package:scores/data/models/match.dart';
 
 class MatchStorage with MyMixin {
   
-  static const String lastGameNameKey = 'LAST-GAME-NAME';
+  static const String lastGameIdKey = 'LAST-GAME-ID';
   static const String lastNumPlayersKey = 'LAST-NUM_PLAYERS';
 
   //----------------------------------------------------------------
 
-  Future<int> loadLastNumPlayers(String gameName) async {
+  Future<int> loadLastNumPlayers(int gameId) async {
     debugMsg("MatchStorage loadLastNumPlayers");
 
     final prefs = await SharedPreferences.getInstance();
 
-    String lastNumPlayersKey = _getNumPlayersStorageKey(gameName);
+    String lastNumPlayersKey = _getNumPlayersStorageKey(gameId);
 
     debugMsg("loading $lastNumPlayersKey");
 
     int lastNumPlayers = prefs.getInt(lastNumPlayersKey) ?? 0;
 
-    debugMsg("last game of $gameName had $lastNumPlayers players");
+    debugMsg("last game of $gameId had $lastNumPlayers players");
 
     return lastNumPlayers;
   }
 
   //----------------------------------------------------------------
 
-  String _getNumPlayersStorageKey(String gameName) {
-    return "LAST-$gameName-NUM-PLAYERS";
+  String _getNumPlayersStorageKey(int gameId) {
+    return "LAST-$gameId-NUM-PLAYERS";
   }
   //----------------------------------------------------------------
 
-  String _getMatchStorageKey(String gameName, int numPlayers) {
-    return "SCORE-$gameName-$numPlayers";
+  String _getMatchStorageKey(int gameId, int numPlayers) {
+    return "SCORE-$gameId-$numPlayers";
   }
   //----------------------------------------------------------------
 
@@ -61,22 +61,22 @@ class MatchStorage with MyMixin {
     final prefs = await SharedPreferences.getInstance();
 
     //    String lastNumPlayersKey = "LAST-${match.name}-NUM-PLAYERS";
-    String lastNumPlayersKey = _getNumPlayersStorageKey(match.name);
+    String lastNumPlayersKey = _getNumPlayersStorageKey(match.gameId);
     await prefs.setInt(lastNumPlayersKey, match.numPlayers());
 
     debugMsg("saving $lastNumPlayersKey ${match.numPlayers()}");
 
-    String matchKey = _getMatchStorageKey(match.name, match.numPlayers());
+    String matchKey = _getMatchStorageKey(match.gameId, match.numPlayers());
     await prefs.setString(matchKey, jsonEncode(match.toJson()));
   }
 
   //----------------------------------------------------------------
 
-  Future<Match?> loadMatch(String gameName, int numPlayers) async {
+  Future<Match?> loadMatch(int gameId, int numPlayers) async {
 
-    debugMsg("MatchStorage loadGame game $gameName numPlayers $numPlayers");
+    debugMsg("MatchStorage loadGame game $gameId numPlayers $numPlayers");
 
-    final key = _getMatchStorageKey(gameName, numPlayers);
+    final key = _getMatchStorageKey(gameId, numPlayers);
 
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(key);

@@ -40,16 +40,19 @@ class MatchHistoryRepository {
 
   Future<int> insert(MatchHistory matchHistory) async {
     debugMsg("MatchHistoryRepository insert matchHistory $matchHistory");
-    final db = await dbHelper.database;
-
-    return await db.insert(tableName, matchHistory.toMap());
+    try {
+      final db = await dbHelper.database;
+      return await db.insert(tableName, matchHistory.toMap());
+    } on Exception catch (e) {
+      debugMsg("ERROR inserting match history: $e");
+      rethrow; // Let the caller handle it
+    }
   }
 
   //---------------------------------------------------------------------------
 
   // Update an existing match history record
   Future<int> update(MatchHistory matchHistory) async {
-
     final db = await dbHelper.database;
     return await db.update(
       tableName,
@@ -63,7 +66,6 @@ class MatchHistoryRepository {
 
   // Delete a match history record by ID
   Future<int> delete(int matchId) async {
-
     final db = await dbHelper.database;
     return await db.delete(
       tableName,
@@ -119,7 +121,6 @@ class MatchHistoryRepository {
 
   // Get all matches for a specific player set
   Future<List<MatchHistory>> getByPlayerSetId(int playerSetId) async {
-
     final db = await dbHelper.database;
     final maps = await db.query(
       tableName,
@@ -134,11 +135,9 @@ class MatchHistoryRepository {
 
   // Get matches within a date range
   Future<List<MatchHistory>> getByDateRange(
-
     DateTime startDate,
     DateTime endDate,
   ) async {
-
     final db = await dbHelper.database;
 
     final maps = await db.query(
@@ -172,7 +171,6 @@ class MatchHistoryRepository {
 
   // Get most recent N matches
   Future<List<MatchHistory>> getRecent(int limit) async {
-
     final db = await dbHelper.database;
     final maps = await db.query(
       tableName,

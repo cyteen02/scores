@@ -37,14 +37,14 @@ class MatchPlayerStatsRepository {
 
   //-----------------------------------------------------------------
 
-  void savePlayerStat(int matchId, int playerId, String stat, String value) {
-    saveStat(matchId, playerId, stat, value);
+  Future<void> savePlayerStat(int matchId, int playerId, String stat, String value) async {
+     await saveStat(matchId, playerId, stat, value);
   }
 
   //-----------------------------------------------------------------
 
-  void saveStat(int matchId, int playerId, String stat, String value) {
-    insert(
+  Future<void> saveStat(int matchId, int playerId, String stat, String value) async {
+    await insert(
       MatchPlayerStats(
         matchId: matchId,
         playerId: playerId,

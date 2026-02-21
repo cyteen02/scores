@@ -19,12 +19,12 @@ import 'package:scores/data/repositories/match_player_stats_repository.dart';
 import 'package:scores/data/repositories/match_repository.dart';
 import 'package:scores/data/repositories/match_stats_repository.dart';
 import 'package:scores/data/repositories/player_set_repository.dart';
-import 'package:scores/data/repositories/round_label_repository.dart';
 
 import 'package:scores/presentation/mixin/my_mixin.dart';
+import 'package:scores/presentation/screens/about_screen.dart';
 import 'package:scores/presentation/screens/list_games_screen.dart';
-import 'package:scores/presentation/screens/list_players_screen.dart';
 import 'package:scores/presentation/screens/list_locations_screen.dart';
+import 'package:scores/presentation/screens/list_players_screen.dart';
 import 'package:scores/presentation/screens/match_stats_list_screen.dart';
 import 'package:scores/presentation/screens/test_screen.dart';
 import 'package:scores/utils/my_utils.dart';
@@ -58,13 +58,13 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
     LocationRepository(),
     MatchHistoryRepository(),
     MatchStatsRepository(),
-    MatchPlayerStatsRepository()
+    MatchPlayerStatsRepository(),
   );
 
-  final gameRepository = GameRepository(RoundLabelRepository());
+  final gameRepository = GameRepository();
   final playerSetRepository = PlayerSetRepository();
   final matchStatsRepository = MatchStatsRepository();
-    final locationRepository = LocationRepository();
+  final locationRepository = LocationRepository();
   final matchHistoryRepository = MatchHistoryRepository();
 
   //-----------------------------------------------------------------
@@ -113,6 +113,13 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
                   ),
                 );
               }
+
+              if (value == 'about') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
+              }
             },
             itemBuilder: (BuildContext context) => [
               PopupMenuItem(
@@ -125,7 +132,10 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
                   ],
                 ),
               ),
-              // Add more menu items here as needed
+              PopupMenuItem<String>(
+                value: 'about',
+                child: const Text('About'),
+              ), // Add more menu items here as needed
             ],
           ),
         ],
@@ -217,7 +227,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
           child: ElevatedButton(
             style: style,
             onPressed: () {
-              gameSelected(gameType.name);
+              gameSelected(gameType.id, gameType.name);
             },
             child: Text(gameType.name),
           ),
@@ -326,10 +336,17 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
         ),
       ),
     );
-    return Center(
+    // return Center(
+    //   child: Padding(
+    //     padding: const EdgeInsets.all(24.0),
+    //     child: Column(children: gameButtons),
+    //   ),
+    // );
+
+    return Expanded(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(children: gameButtons),
+        child: ListView(children: gameButtons),
       ),
     );
 
@@ -368,22 +385,27 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   }
   //--------------------------------------------------------------
 
-  void gameSelected(String gameName) async {
+  void gameSelected(int? gameIdSelected, String gameName) async {
+    int gameId = gameIdSelected ?? 0;
+
     debugMsg("gameSelected gameName $gameName");
 
     Match match;
-    Match? loadedMatch = await loadMatchData(gameName);
+    Match? loadedMatch = await loadMatchDFromSharedPreferences(gameId);
 
     if (loadedMatch == null) {
-      // set up a new match with game definition from the database
-      Game game = await gameRepository.getGameByName(gameName);
+      match = Match(gameId: gameId, playerSet: PlayerSet());
 
-      match = Match(game: game, playerSet: PlayerSet());
+      debugMsg("match.gameId is $gameId");
     } else {
       match = loadedMatch;
+      debugMsg("used loadedMatch match.gameId is ${match.gameId}");
     }
-    debugMsg("match.game is ${match.game.toString()}");
-    
+
+    // however we got to the match, load or reload the game definition
+    // from the database
+    await match.reloadGame();
+
     if (mounted) {
       await Navigator.push(
         context,
@@ -394,7 +416,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
             gameRepository: gameRepository,
             playerSetRepository: playerSetRepository,
             locationRepository: locationRepository,
-            matchStatsRepository: matchStatsRepository
+            matchStatsRepository: matchStatsRepository,
           ),
         ),
       );
@@ -403,8 +425,8 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
 
   //--------------------------------------------------------------
 
-  Future<Match?> loadMatchData(String gameName) async {
-    debugMsg("_ListGamesState loadMatchData gameName $gameName");
+  Future<Match?> loadMatchDFromSharedPreferences(int gameId) async {
+    debugMsg("_ListGamesState loadMatchData gameName $gameId");
 
     Match? loadedMatch;
 
@@ -413,7 +435,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
     // get num players last time this game was played
     int lastNumPlayers = 0;
     try {
-      lastNumPlayers = await storage.loadLastNumPlayers(gameName);
+      lastNumPlayers = await storage.loadLastNumPlayers(gameId);
       debugMsg("lastNumPlayers $lastNumPlayers");
     } catch (e) {
       debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", box: true);
@@ -422,7 +444,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
     if (lastNumPlayers > 0) {
       // Get the match last played with this many players
       try {
-        loadedMatch = await storage.loadMatch(gameName, lastNumPlayers);
+        loadedMatch = await storage.loadMatch(gameId, lastNumPlayers);
         debugMsg("Match at this point is ${loadedMatch.toString()}");
       } catch (e) {
         debugMsg("_ScoresState loadGameData ${e.toString()}", box: true);
@@ -434,14 +456,14 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
 
   //--------------------------------------------------------------
 
-  Future<int> loadLastNumPlayers(String gameName) async {
+  Future<int> loadLastNumPlayers(int gameId) async {
     debugMsg("_ListGamesState loadLastNumPlayers");
 
     final MatchStorage storage = MatchStorage();
     int lastNumPlayers = 0;
 
     try {
-      lastNumPlayers = await storage.loadLastNumPlayers(gameName);
+      lastNumPlayers = await storage.loadLastNumPlayers(gameId);
       debugMsg("lastNumPlayers $lastNumPlayers");
     } catch (e) {
       debugMsg("_ScoresState loadLastNumPlayers ${e.toString()}", box: true);
@@ -482,14 +504,10 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
   void manageLocations() async {
     debugMsg("manageLocations");
 
-    final locationRepository = LocationRepository();
-
     if (mounted) {
       await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => ListLocationsScreen(repository: locationRepository),
-        ),
+        MaterialPageRoute(builder: (context) => Locations2ListScreen()),
       );
     }
 

@@ -38,19 +38,18 @@ class DatabaseHelper {
  deleteDB();
  ************************************************************/
 
-
-
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, dbName);
-    //    String path = "/data/user/0/com.example.scores/databases/scores.db";
 
     debugMsg("path is $path");
 
     Database db = await openDatabase(
       path,
       version: dbVersion,
+      onOpen: _openDB,
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
+      singleInstance: true,
     );
 
     await db.execute('PRAGMA foreign_keys = ON');
@@ -65,6 +64,15 @@ class DatabaseHelper {
     // );
   }
 
+  //---------------------------------------------------------------------------
+
+  Future _openDB(Database db) async {
+    debugMsg("_openDB db $db");
+
+//    insertTestData(db);
+  }
+
+  //---------------------------------------------------------------------------
   Future _createDB(Database db, int version) async {
     debugMsg("_createDB db $db version $version");
 
@@ -177,6 +185,8 @@ class DatabaseHelper {
       ''');
   }
 
+  //---------------------------------------------------------------------------
+
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugMsg("_onUpgrade oldVersion $oldVersion newVersion $newVersion");
 
@@ -264,16 +274,117 @@ class DatabaseHelper {
   //---------------------------------------------------------------------------
 
   Future deleteDB() async {
-    String path = "/data/user/0/com.example.scores/databases/scores.db";
+    //    String path = "/data/user/0/com.example.scores/databases/scores.db";
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, dbName);
+    debugMsg("deleteDB");
     await deleteDatabase(path);
   }
 
   //---------------------------------------------------------------------------
 
   Future close() async {
+    debugMsg("close");
     final db = await database;
     db.close();
   }
 
   //---------------------------------------------------------------------------
+
+  Future<void> insertTestData(Database db) async {
+    await db.execute('''
+INSERT INTO GAME (id, name, showFutureRoundsType, winCondition, gameLengthType) 
+VALUES (1, 'Simple', 'showNoFutureRounds', 'highestScore', 'variableLength');
+      ''');
+
+    await db.execute('''
+INSERT INTO GAME (id, name, showFutureRoundsType, winCondition, gameLengthType) 
+VALUES (2, 'Rummy', 'showAllFutureRounds', 'lowestScore', 'variableLength');
+      ''');
+
+    await db.execute('''
+INSERT INTO GAME (id, name, showFutureRoundsType, winCondition, gameLengthType) 
+VALUES (3, 'KD', 'showNoFutureRounds', 'highestScore', 'fixedLength');
+      ''');
+
+    await db.execute('''
+INSERT INTO LOCATION (id, name, description, color) 
+VALUES (1, 'The Mill', NULL, 4280391411);
+      ''');
+
+    await db.execute('''
+INSERT INTO LOCATION (id, name, description, color) 
+VALUES (2, 'Dice Box', NULL, 4280391411);
+      ''');
+
+    await db.execute('''
+INSERT INTO LOCATION (id, name, description, color) 
+VALUES (3, 'At Home', NULL, 4280391411);
+      ''');
+
+    await db.execute('''
+INSERT INTO PLAYER (id, name, color, photoPath) 
+VALUES (1, 'John', 4280391411, NULL);
+      ''');
+
+    await db.execute('''
+INSERT INTO PLAYER (id, name, color, photoPath) 
+VALUES (2, 'Paul', 4278228616, NULL);
+      ''');
+
+    await db.execute('''
+INSERT INTO PLAYER (id, name, color, photoPath) 
+VALUES (3, 'Jane', 4288423856, NULL);
+      ''');
+
+    await db.execute('''
+INSERT INTO PLAYER (id, name, color, photoPath) 
+VALUES (4, 'Becca', 4288423856, NULL);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (1, 2, 'A', NULL, 4280391411, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (2, 2, '2', NULL, 4280391411, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (7, 2, '3', NULL, 4280391411, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (8, 2, '4', NULL, 4280391411, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (10, 3, 'Forest', NULL, 4283215696, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (11, 3, 'Desert', NULL, 4294961979, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (12, 3, 'Clay', NULL, 4288585374, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (13, 3, 'Gold', NULL, 4284513675, 58858);
+      ''');
+
+    await db.execute('''
+INSERT INTO ROUND_LABEL (id, game_id, name, description, color, icon) 
+VALUES (14, 3, 'Sea', NULL, 4280391411, 58858);
+      ''');
+  }
 }
