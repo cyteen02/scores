@@ -31,7 +31,7 @@ class GameRepository {
   Future<void> insertGame(Game game) async {
     final db = await dbHelper.database;
     final newId = await db.insert(
-      'game',
+      DatabaseHelper.tableGame,
       game.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -46,7 +46,7 @@ class GameRepository {
 
     final db = await dbHelper.database;
     final result = await db.query(
-      'game', // your table name
+      DatabaseHelper.tableGame,
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -78,7 +78,7 @@ class GameRepository {
 
     final db = await dbHelper.database;
     final result = await db.query(
-      'game', // your table name
+      DatabaseHelper.tableGame,
       where: 'name = ?',
       whereArgs: [name],
     );
@@ -114,29 +114,25 @@ class GameRepository {
   //----------------------------------------------------------------
 
   Future<List<Game>> getAllGames() async {
-    final db = await dbHelper.database;
+    return await dbHelper.safeDbCall(() async {
+          final db = await dbHelper.database;
 
-    List<Game> games = [];
+          List<Game> games = [];
 
-    try {
-      final List<Map<String, dynamic>> maps = await db.query('game');
+          final List<Map<String, dynamic>> maps = await db.query('game');
 
-      Game game;
-      for (Map<String, dynamic> gameMap in maps) {
-        game = Game.fromMap(gameMap);
-        var roundLabels = await _roundLabelRepository.getByGameId(game.id ?? 0);
-        games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
-      }
+          Game game;
+          for (Map<String, dynamic> gameMap in maps) {
+            game = Game.fromMap(gameMap);
+            var roundLabels = await _roundLabelRepository.getByGameId(
+              game.id ?? 0,
+            );
+            games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
+          }
 
-      // return List.generate(maps.length, (i) {
-      //   return Game.fromMap(maps[i]);
-      // });
-    } on Exception catch (e) {
-      errorMsg('Error loading game: $e');
-      return []; // Return empty list on error
-    }
-
-    return games;
+          return games;
+        }, context: "GameRepository.getAllGames") ??
+        []; // Return empty list if it fails
   }
 
   //----------------------------------------------------------------
@@ -161,7 +157,12 @@ class GameRepository {
     return await db.transaction((txn) async {
       try {
         debugMsg("${game.toMap()}", box: true);
-        db.update('game', game.toMap(), where: 'id = ?', whereArgs: [game.id]);
+        db.update(
+          DatabaseHelper.tableGame,
+          game.toMap(),
+          where: 'id = ?',
+          whereArgs: [game.id],
+        );
 
         // Delete existing round labels if updating
         await txn.delete(
@@ -169,14 +170,6 @@ class GameRepository {
           where: 'game_id = ?',
           whereArgs: [game.id],
         );
-
-        // Insert all round labels
-        // for (final roundLabel in game.roundLabels) {
-        //   await txn.insert('round_label', {
-        //     ...roundLabel.toMap(),
-        //     'game_id': game.id,
-        //   });
-        // }
 
         for (final roundLabel in game.roundLabels) {
           await txn.insert('round_label', {
@@ -197,7 +190,7 @@ class GameRepository {
 
   Future<void> deleteGame(int id) async {
     final db = await dbHelper.database;
-    await db.delete('game', where: 'id = ?', whereArgs: [id]);
+    await db.delete(DatabaseHelper.tableGame, where: 'id = ?', whereArgs: [id]);
   }
 
   //----------------------------------------------------------------
@@ -210,7 +203,7 @@ class GameRepository {
       await txn.delete('round_label', where: 'game_id = ?', whereArgs: [id]);
 
       // Delete game
-      return await txn.delete('game', where: 'id = ?', whereArgs: [id]);
+      return await txn.delete(DatabaseHelper.tableGame, where: 'id = ?', whereArgs: [id]);
     });
   }
 
@@ -219,7 +212,7 @@ class GameRepository {
   // Get a single game by ID with its round labels
   Future<Game?> getById(int id) async {
     final db = await dbHelper.database;
-    final gameMaps = await db.query('game', where: 'id = ?', whereArgs: [id]);
+    final gameMaps = await db.query(DatabaseHelper.tableGame, where: 'id = ?', whereArgs: [id]);
 
     if (gameMaps.isEmpty) {
       return null;
@@ -250,11 +243,11 @@ class GameRepository {
       // Save the game first
       final gameId =
           game.id ??
-          await txn.insert('game', {
+          await txn.insert(DatabaseHelper.tableGame, {
             'name': game.name,
             'showFutureRoundsType': game.showFutureRoundsType.name,
             'winCondition': game.winCondition.name,
-            'gameLengthType': game.gameLengthType.name
+            'gameLengthType': game.gameLengthType.name,
           });
       // Delete existing round labels if updating
       if (game.id != null) {
@@ -278,28 +271,33 @@ class GameRepository {
 
   // Get all games with their round labels
   Future<List<Game>> getAll() async {
-    final db = await dbHelper.database;
-    final gameMaps = await db.query('game', orderBy: 'name ASC');
 
-    final games = <Game>[];
-    for (final gameMap in gameMaps) {
-      final gameId = gameMap['id'] as int;
+    return await dbHelper.safeDbCall(() async {
 
-      // Get round labels for this game
-      final labelMaps = await db.query(
-        'round_label',
-        where: 'game_id = ?',
-        whereArgs: [gameId],
-        orderBy: 'id ASC',
-      );
+          final db = await dbHelper.database;
+          final gameMaps = await db.query(DatabaseHelper.tableGame, orderBy: 'name ASC');
 
-      final roundLabels = labelMaps
-          .map((map) => RoundLabel.fromMap(map))
-          .toList();
-      games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
-    }
+          final games = <Game>[];
+          for (final gameMap in gameMaps) {
+            final gameId = gameMap['id'] as int;
 
-    return games;
+            // Get round labels for this game
+            final labelMaps = await db.query(
+              'round_label',
+              where: 'game_id = ?',
+              whereArgs: [gameId],
+              orderBy: 'id ASC',
+            );
+
+            final roundLabels = labelMaps
+                .map((map) => RoundLabel.fromMap(map))
+                .toList();
+            games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
+          }
+
+          return games;
+        }, context: "GameRepository.getAll") ??
+        []; // Return empty list if it fails
   }
 
   //----------------------------------------------------------------
