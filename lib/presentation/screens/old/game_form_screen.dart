@@ -10,32 +10,28 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/data/repositories/game_repository.dart';
+import 'package:scores/data/repositories/repositories.dart';
 import 'package:scores/data/models/game.dart';
 import 'package:scores/utils/my_utils.dart';
 
-class GameFormScreen extends StatefulWidget {
-  final GameRepository gameRepository;
+class OldGameFormScreen extends StatefulWidget {
   final Game? game;
 
-  const GameFormScreen({super.key, 
-          required this.gameRepository, 
+  const OldGameFormScreen({super.key, 
           this.game});
 
   @override
-  State<GameFormScreen> createState() => _GameFormScreenState();
+  State<OldGameFormScreen> createState() => _OldGameFormScreenState();
 }
 
 //--------------------------------------------------------------
 
-class _GameFormScreenState extends State<GameFormScreen> {
+class _OldGameFormScreenState extends State<OldGameFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _roundController = TextEditingController();
 
-  late GameRepository gameRespository;
-
-  List<String> rounds = [];
+    List<String> rounds = [];
 
   ShowFutureRoundsType showFutureRoundsType =
       ShowFutureRoundsType.showNoFutureRounds;
@@ -50,9 +46,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
   void initState() {
 
     super.initState();
-
-    gameRespository = widget.gameRepository;
-
+    
     if (widget.game != null) {
       creatingNewGame = false;
       _nameController.text = widget.game!.name;
@@ -280,7 +274,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
       final gameName = _nameController.text;
 
       if (creatingNewGame) {
-        bool gameExists = await gameRespository.nameExists(gameName);
+        bool gameExists = await gameRepository.nameExists(gameName);
         if (gameExists) {
           return "Game $gameName already exists";
         }
@@ -302,9 +296,9 @@ class _GameFormScreenState extends State<GameFormScreen> {
       debugMsg("Saving game $game");
 
       if (creatingNewGame) {
-        await gameRespository.insertGame(game);
+        await gameRepository.insertGame(game);
       } else {
-        await gameRespository.updateGame(game);
+        await gameRepository.updateGame(game);
       }
 
       if (mounted) {

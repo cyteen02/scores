@@ -94,5 +94,21 @@ Map<String, dynamic> calcMatchLocationStats(
 
   return stats;
 }
+//---------------------------------------------------------------------------
+
+// Get a list of every match played
+Map<int, int> calcMatchHistory(List<MatchHistory> matchHistoryList) {
+  final Map<int, int> numGames = {};
+
+  for (final match in matchHistoryList) {
+    numGames.update(
+      match.gameId, 
+      (existingValue) => existingValue + 1, 
+      ifAbsent: () => 1,
+    );
+  }
+
+  return numGames;
+}
 
 //---------------------------------------------------------------------------

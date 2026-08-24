@@ -8,12 +8,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:scores/presentation/screens/main_menu_screen.dart';
+import 'package:scores/presentation/screens/menu/games_menu_screen.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MainMenu());
+    await tester.pumpWidget(const GamesMenu());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

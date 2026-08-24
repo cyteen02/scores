@@ -60,9 +60,9 @@ class _ListLocationsScreenState extends State<ListLocationsScreen> {
         location: location,
         onSave: (newLocation) async {
           if (location == null) {
-            await widget.repository.create(newLocation);
+            await widget.repository.insertLocation(newLocation);
           } else {
-            await widget.repository.update(newLocation);
+            await widget.repository.updateLocation(newLocation);
           }
           _loadLocations();
         },

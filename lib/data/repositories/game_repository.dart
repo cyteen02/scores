@@ -9,9 +9,12 @@
 *
 *----------------------------------------------------------------------------*/
 
+import 'package:flutter/material.dart';
+import 'package:scores/data/extensions/color_extensions.dart';
 import 'package:scores/data/models/round_label.dart';
-import 'package:scores/data/repositories/database_helper.dart';
 import 'package:scores/data/models/game.dart';
+
+import 'package:scores/data/repositories/database_helper.dart';
 import 'package:scores/data/repositories/round_label_repository.dart';
 import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
@@ -73,47 +76,11 @@ class GameRepository {
 
   //----------------------------------------------------------------
 
-  Future<Game> getGameByName(String name) async {
-    debugMsg("getGameByName name $name");
 
-    final db = await dbHelper.database;
-    final result = await db.query(
-      DatabaseHelper.tableGame,
-      where: 'name = ?',
-      whereArgs: [name],
-    );
-
-    // if (result.isEmpty) {
-    //   return null; // no game type found with that id
-    // }
-
-    debugMsg("query result $result");
-
-    final map = result.first;
-
-    Game game = Game(id: map['id'] as int, name: name);
-    // game.id = map['id'] as int;
-    // game.name = map['name'] as String;
-
-    game.showFutureRoundsType = ShowFutureRoundsType.values.byName(
-      map['showFutureRoundsType'] as String,
-    );
-    game.winCondition = WinCondition.values.byName(
-      map['winCondition'] as String,
-    );
-
-    game.gameLengthType = GameLengthType.values.byName(
-      map['gameLengthType'] as String,
-    );
-
-    game.roundLabels = await _roundLabelRepository.getByGameId(game.id ?? 0);
-
-    return game;
-  }
 
   //----------------------------------------------------------------
 
-  Future<List<Game>> getAllGames() async {
+  Future<List<Game>> getAllGamesOLD() async {
     return await dbHelper.safeDbCall(() async {
           final db = await dbHelper.database;
 
@@ -125,8 +92,10 @@ class GameRepository {
           for (Map<String, dynamic> gameMap in maps) {
             game = Game.fromMap(gameMap);
             var roundLabels = await _roundLabelRepository.getByGameId(
-              game.id ?? 0,
+              game.id 
             );
+
+            if ( game.color == 0 ) { game.color = Colors.black.toInt(); }
             games.add(Game.fromMap(gameMap, roundLabels: roundLabels));
           }
 
@@ -239,18 +208,23 @@ class GameRepository {
 
     debugMsg("saveGameWithRoundLabels game $game");
 
+    if ( game.id > 0 ) {
+      debugMsg("ERROR game.id should be zero on a new game, not ${game.id}");
+      return game;
+    }
+    
     return await db.transaction((txn) async {
       // Save the game first
       final gameId =
-          game.id ??
-          await txn.insert(DatabaseHelper.tableGame, {
+            await txn.insert(DatabaseHelper.tableGame, {
             'name': game.name,
+            'color': game.color,
             'showFutureRoundsType': game.showFutureRoundsType.name,
             'winCondition': game.winCondition.name,
             'gameLengthType': game.gameLengthType.name,
           });
       // Delete existing round labels if updating
-      if (game.id != null) {
+      if (game.id > 0 ) {
         await txn.delete(
           'round_label',
           where: 'game_id = ?',
@@ -263,13 +237,60 @@ class GameRepository {
         await txn.insert('round_label', {...label.toMap(), 'game_id': gameId});
       }
 
+      debugMsg("New gameId is $gameId");
+
       return game.copyWith(id: gameId);
     });
   }
 
-  //----------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-  // Get all games with their round labels
+  Future<Game> getGameByName(String name) async {
+    debugMsg("getGameByName name $name");
+
+
+    final db = await dbHelper.database;
+
+    final result = await db.query(
+      DatabaseHelper.tableGame,
+      where: 'name = ?',
+      whereArgs: [name],
+    );
+
+    // if (result.isEmpty) {
+    //   return null; // no game type found with that id
+    // }
+
+    debugMsg("query result $result");
+
+    final gameMap = result.first;
+    final gameId = gameMap['id'] as int;
+
+    
+    // Game game = Game(id: map['id'] as int, name: name);
+    
+    // game.showFutureRoundsType = ShowFutureRoundsType.values.byName(
+    //   map['showFutureRoundsType'] as String,
+    // );
+    
+    // game.winCondition = WinCondition.values.byName(
+    //   map['winCondition'] as String,
+    // );
+
+    // game.gameLengthType = GameLengthType.values.byName(
+    //   map['gameLengthType'] as String,
+    // );
+
+    final roundLabels = await _roundLabelRepository.getByGameId(gameId);
+
+    Game game = Game.fromMap(gameMap, roundLabels: roundLabels);
+
+    return game;
+  }
+
+  //---------------------------------------------------------------------------
+  
+    // Get all games with their round labels
   Future<List<Game>> getAll() async {
 
     return await dbHelper.safeDbCall(() async {
@@ -300,5 +321,5 @@ class GameRepository {
         []; // Return empty list if it fails
   }
 
-  //----------------------------------------------------------------
+  //---------------------------------------------------------------------------
 }

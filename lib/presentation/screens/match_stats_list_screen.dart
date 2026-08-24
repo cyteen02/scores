@@ -11,9 +11,14 @@
 
 // Match Stats List Screen
 import 'package:flutter/material.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
+
 import 'package:scores/data/models/match_stats.dart';
+
 import 'package:scores/presentation/screens/match_player_stats_list_screen.dart';
+
+//---------------------------------------------------------------------------
 
 class MatchStatsListScreen extends StatefulWidget {
   const MatchStatsListScreen({super.key});
@@ -35,13 +40,8 @@ class _MatchStatsListScreenState extends State<MatchStatsListScreen> {
   //-------------------------------------------------------------------
 
   Future<void> _loadMatchStats() async {
-    MatchStatsRepository repository = MatchStatsRepository();
-
-    final List<MatchStats> newMatchStats = await repository.getAll();
-
-    //    final List<Map<String, dynamic>> maps = await repository.getAll();
+    final List<MatchStats> newMatchStats = await matchStatsRepository.getAll();
     setState(() {
-      //    matchStats = maps.map((map) => MatchStats.fromMap(map)).toList();
       matchStats = List.from(newMatchStats);
       isLoading = false;
     });

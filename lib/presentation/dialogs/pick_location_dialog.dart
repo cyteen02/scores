@@ -9,7 +9,11 @@
 *
 *----------------------------------------------------------------------------*/
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:scores/constants/app_assets.dart';
+import 'package:scores/data/extensions/int_extensions.dart';
 import 'package:scores/data/models/location.dart';
 
 Future<Location?> showLocationPickerDialog(
@@ -32,19 +36,27 @@ Future<Location?> showLocationPickerDialog(
                   title: const Text('None'),
                   leading: const Icon(Icons.location_off),
                   onTap: () {
-                    Navigator.of(
-                      context,
-                    ).pop(Location(name: 'NONE', color: 0)); // Or pop a special "clear" value
+                    Navigator.of(context).pop(
+                      Location(name: 'NONE', color: 0),
+                    ); // Or pop a special "clear" value
                   },
                 );
               }
               final location = locations[index - 1];
               return ListTile(
-                title: Text(location.name),
+                title: Text(location.name,
+                    style: TextStyle(color: location.color.toColor())   ),
                 subtitle: location.description != null
                     ? Text(location.description!)
                     : null,
-                leading: Icon(Icons.location_on, color: Color(location.color)),
+                //                leading: Icon(Icons.location_on, color: Color(location.color)),
+                leading: CircleAvatar(
+                  backgroundImage:
+                      (location.photoPath.isNotEmpty &&
+                          File(location.photoPath).existsSync())
+                      ? FileImage(File(location.photoPath))
+                      : const AssetImage(AppAssets.defaultLocationPhoto),
+                ),
                 onTap: () {
                   Navigator.of(context).pop(location);
                 },

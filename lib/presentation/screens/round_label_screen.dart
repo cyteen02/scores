@@ -11,17 +11,20 @@
 
 
 import 'package:flutter/material.dart';
+
+import 'package:scores/data/models/round_label.dart';
+
 import 'package:scores/data/extensions/color_extensions.dart';
 import 'package:scores/data/extensions/icon_extensions.dart';
 import 'package:scores/data/extensions/int_extensions.dart';
-import 'package:scores/data/models/round_label.dart';
-import 'package:scores/data/repositories/round_label_repository.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
+
+//---------------------------------------------------------------------------
 
 class RoundLabelScreen extends StatefulWidget {
-  final RoundLabelRepository roundLabelRepository;
 
-  const RoundLabelScreen({super.key, 
-          required this.roundLabelRepository});
+  const RoundLabelScreen({super.key});
 
   @override
   State<RoundLabelScreen> createState() => _RoundLabelScreenState();
@@ -43,7 +46,7 @@ class _RoundLabelScreenState extends State<RoundLabelScreen> {
   
   Future<void> _loadRoundLabels() async {
     setState(() => _isLoading = true);
-    final roundLabels = await widget.roundLabelRepository.getAll();
+    final roundLabels = await roundLabelRepository.getAll();
     setState(() {
       _roundLabels = roundLabels;
       _isLoading = false;
@@ -59,9 +62,9 @@ class _RoundLabelScreenState extends State<RoundLabelScreen> {
         roundLabel: roundLabel,
         onSave: (newRoundLabel) async {
           if (roundLabel == null) {
-            await widget.roundLabelRepository.create(newRoundLabel);
+            await roundLabelRepository.create(newRoundLabel);
           } else {
-            await widget.roundLabelRepository.update(newRoundLabel);
+            await roundLabelRepository.update(newRoundLabel);
           }
           _loadRoundLabels();
         },
@@ -91,7 +94,7 @@ class _RoundLabelScreenState extends State<RoundLabelScreen> {
     );
 
     if (confirmed == true && roundLabel.id != null) {
-      await widget.roundLabelRepository.delete(roundLabel.id!);
+      await roundLabelRepository.delete(roundLabel.id!);
       _loadRoundLabels();
     }
   }

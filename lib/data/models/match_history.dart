@@ -29,6 +29,7 @@ class MatchHistory {
       'match_id': matchId,
       'game_id': gameId,
       'player_set_id': playerSetId,
+      'location_id': locationId,
       'match_date': matchDate.toIso8601String(),
     };
   }

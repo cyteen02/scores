@@ -5,16 +5,17 @@
 *
 * You may not use, distribute and modify this code under any circumstances
 *
-* Created: 01/31/2026
+* Created: 08/24/2026
 *
 *----------------------------------------------------------------------------*/
 
+// lib/constants/app_assets.dart
 
-extension DoubleIsIntegerExtension on double {
-  bool isInteger() {
-    var d = this;
-    return d == d.roundToDouble();
-  }
+abstract class AppAssets {
+  static const String _images = 'assets/images';
+
+  static const String backgroundImage = '$_images/background.jpg'; 
+  static const String defaultPlayerPhoto = '$_images/meeple1.png';
+  static const String defaultLocationPhoto = '$_images/house1.png';
 }
-
 //---------------------------------------------------------------------------

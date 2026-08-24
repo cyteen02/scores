@@ -10,7 +10,9 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/data/repositories/match_player_stats_repository.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
+
 import 'package:scores/data/models/match_player_stats.dart';
 
 //--------------------------------------------------------------
@@ -27,7 +29,6 @@ class MatchPlayerStatsScreen extends StatefulWidget {
 //--------------------------------------------------------------
 
 class _MatchPlayerStatsScreenState extends State<MatchPlayerStatsScreen> {
-
   List<MatchPlayerStats> matchPlayerStats = [];
   bool isLoading = true;
 
@@ -40,11 +41,8 @@ class _MatchPlayerStatsScreenState extends State<MatchPlayerStatsScreen> {
   //--------------------------------------------------------------
 
   Future<void> _loadPlayerStats() async {
-
-    MatchPlayerStatsRepository repository = MatchPlayerStatsRepository();
-
-    final List<MatchPlayerStats> newMatchPlayerStats = await repository
-        .getByMatchId(widget.matchId);
+    final List<MatchPlayerStats> newMatchPlayerStats =
+        await matchPlayerStatsRepository.getByMatchId(widget.matchId);
 
     setState(() {
       matchPlayerStats = List.from(newMatchPlayerStats);
@@ -108,7 +106,7 @@ class _MatchPlayerStatsScreenState extends State<MatchPlayerStatsScreen> {
                     ),
                     columns: const [
                       DataColumn(label: Text('ID')),
-//                      DataColumn(label: Text('Match ID')),
+                      //                      DataColumn(label: Text('Match ID')),
                       DataColumn(label: Text('Player ID')),
                       DataColumn(label: Text('Stat')),
                       DataColumn(label: Text('Value')),
@@ -117,7 +115,7 @@ class _MatchPlayerStatsScreenState extends State<MatchPlayerStatsScreen> {
                       return DataRow(
                         cells: [
                           DataCell(Text(stat.id.toString())),
-//                          DataCell(Text(stat.matchId.toString())),
+                          //                          DataCell(Text(stat.matchId.toString())),
                           DataCell(Text(stat.playerId.toString())),
                           DataCell(Text(stat.stat)),
                           DataCell(Text(stat.value)),
@@ -130,4 +128,7 @@ class _MatchPlayerStatsScreenState extends State<MatchPlayerStatsScreen> {
             ),
     );
   }
+
+//---------------------------------------------------------------------------
+
 }

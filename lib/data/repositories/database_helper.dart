@@ -15,7 +15,7 @@ import 'package:scores/utils/my_utils.dart';
 import 'package:sqflite/sqflite.dart';
 
 const String dbName = "scores.db";
-const int dbVersion = 11;
+const int dbVersion = 14;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -42,6 +42,7 @@ class DatabaseHelper {
     CREATE TABLE $tableGame (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      color INTEGER NOT NULL DEFAULT 0,
       showFutureRoundsType TEXT DEFAULT "showNoFutureRounds",        
       winCondition TEXT DEFAULT "highestScore",
       gameLengthType TEXT DEFAULT "variableLength"        
@@ -74,7 +75,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
-        color INTEGER NOT NULL
+        color INTEGER NOT NULL,
+        photoPath TEXT
       )
     ''';
 
@@ -233,12 +235,24 @@ class DatabaseHelper {
       await db.execute(tablePlayerSetPlayers);
     }
 
-    if (oldVersion < 11) {
+    if (oldVersion < 10) {
       await db.execute('''
         DROP TABLE $tableMatchHistory
     ''');
-
       await db.execute(tableMatchHistory);
+    }
+
+    if (oldVersion < 13) {
+      await db.execute('''
+        ALTER TABLE $tableGame 
+          ADD COLUMN color INTEGER NOT NULL DEFAULT 0
+    ''');
+    }
+    if (oldVersion < 14) {
+      await db.execute('''
+        ALTER TABLE $tableLocation 
+          ADD COLUMN photoPath TEXT
+    ''');
     }
   }
 

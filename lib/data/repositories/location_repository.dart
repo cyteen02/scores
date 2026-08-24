@@ -22,11 +22,11 @@ class LocationRepository {
   //---------------------------------------------------------------------------
 
   // Create a new location
-  Future<Location> create(Location location) async {
+  Future<Location> insertLocation(Location location) async {
     final db = await dbHelper.database;
 
     final id = await db.insert(
-      'location',
+      DatabaseHelper.tableLocation,
       location.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -39,7 +39,11 @@ class LocationRepository {
   Future<Location?> getById(int id) async {
     final db = await dbHelper.database;
 
-    final maps = await db.query('location', where: 'id = ?', whereArgs: [id]);
+    final maps = await db.query(
+      DatabaseHelper.tableLocation,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
 
     if (maps.isEmpty) {
       return null;
@@ -54,8 +58,11 @@ class LocationRepository {
   Future<List<Location>> getAll() async {
     debugMsg("getAll");
     final db = await dbHelper.database;
-    debugMsg("db $db");    
-    final maps = await db.query('location', orderBy: 'name ASC');
+    debugMsg("db $db");
+    final maps = await db.query(
+      DatabaseHelper.tableLocation,
+      orderBy: 'name ASC',
+    );
     debugMsg("maps $maps");
     return maps.map((map) => Location.fromMap(map)).toList();
   }
@@ -63,10 +70,10 @@ class LocationRepository {
   //-----------------------------------------------------------
 
   // Update an existing location
-  Future<int> update(Location location) async {
+  Future<int> updateLocation(Location location) async {
     final db = await dbHelper.database;
     return await db.update(
-      'location',
+      DatabaseHelper.tableLocation,
       location.toMap(),
       where: 'id = ?',
       whereArgs: [location.id],
@@ -78,7 +85,11 @@ class LocationRepository {
   // Delete a location
   Future<int> delete(int id) async {
     final db = await dbHelper.database;
-    return await db.delete('location', where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      DatabaseHelper.tableLocation,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   //-----------------------------------------------------------
@@ -87,12 +98,27 @@ class LocationRepository {
   Future<List<Location>> searchByName(String query) async {
     final db = await dbHelper.database;
     final maps = await db.query(
-      'location',
+      DatabaseHelper.tableLocation,
       where: 'name LIKE ?',
       whereArgs: ['%$query%'],
       orderBy: 'name ASC',
     );
     return maps.map((map) => Location.fromMap(map)).toList();
+  }
+
+  //---------------------------------------------------------------------------
+
+  Future<bool> nameExists(String locationName) async {
+    return await dbHelper.safeDbCall(() async {
+          final db = await dbHelper.database;
+          final result = await db.rawQuery(
+            'SELECT COUNT(*) as count FROM ${DatabaseHelper.tableLocation} WHERE name = ?',
+            [locationName],
+          );
+
+          return (result.first['count'] as int > 0);
+        }, context: "LocationRepository.nameExists") ??
+        false; // Return empty list if it fails
   }
 
   //-----------------------------------------------------------

@@ -10,68 +10,50 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
+import 'package:scores/constants/app_assets.dart';
+import 'package:scores/data/extensions/int_extensions.dart';
 import 'package:scores/data/models/player_set.dart';
 import 'package:scores/data/repositories/database_helper.dart';
-import 'package:scores/data/repositories/game_repository.dart';
-import 'package:scores/data/repositories/location_repository.dart';
-import 'package:scores/data/repositories/match_history_repository.dart';
-import 'package:scores/data/repositories/match_player_stats_repository.dart';
-import 'package:scores/data/repositories/match_repository.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
-import 'package:scores/data/repositories/player_set_repository.dart';
+import 'package:scores/data/repositories/repositories.dart';
 
 import 'package:scores/presentation/mixin/my_mixin.dart';
+
 import 'package:scores/presentation/screens/about_screen.dart';
-import 'package:scores/presentation/screens/list_games_screen.dart';
-import 'package:scores/presentation/screens/list_locations_screen.dart';
-import 'package:scores/presentation/screens/list_players_screen.dart';
+import 'package:scores/presentation/screens/manage/game_list_screen.dart';
+import 'package:scores/presentation/screens/manage/location_list_screen.dart';
+import 'package:scores/presentation/screens/manage/player_list_screen.dart';
 import 'package:scores/presentation/screens/match_stats_list_screen.dart';
+import 'package:scores/presentation/screens/menu/history_menu_screen.dart';
 import 'package:scores/presentation/screens/test_screen.dart';
+import 'package:scores/presentation/screens/list_rounds_screen.dart';
+
 import 'package:scores/utils/my_utils.dart';
 
 import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/game.dart';
-import 'package:scores/presentation/screens/list_rounds_screen.dart';
 import 'package:scores/data/services/match_storage.dart';
 
-class MainMenu extends StatefulWidget {
-  const MainMenu({super.key});
+class GamesMenu extends StatefulWidget {
+  const GamesMenu({super.key});
 
   @override
-  State<MainMenu> createState() => _MainMenuState();
+  State<GamesMenu> createState() => _GamesMenuState();
 }
 
 //--------------------------------------------------------------
 
-class _MainMenuState extends State<MainMenu> with MyMixin {
+class _GamesMenuState extends State<GamesMenu> with MyMixin {
   List<Game> games = [];
   Future<Map<String, dynamic>>? _dataFuture;
 
-  //  Match game = Match();
-
   String gameName = "";
   bool isLoading = true;
-
-  //  final dbHelper = DatabaseHelper.instance;
-  final matchRepository = MatchRepository(
-    PlayerSetRepository(),
-    LocationRepository(),
-    MatchHistoryRepository(),
-    MatchStatsRepository(),
-    MatchPlayerStatsRepository(),
-  );
-
-  final gameRepository = GameRepository();
-  final playerSetRepository = PlayerSetRepository();
-  final matchStatsRepository = MatchStatsRepository();
-  final locationRepository = LocationRepository();
-  final matchHistoryRepository = MatchHistoryRepository();
 
   //-----------------------------------------------------------------
 
   @override
   void initState() {
-    debugMsg("_ScoresState initState");
+    debugMsg("_GamesMenu initState");
     super.initState();
     _dataFuture = _fetchGameData();
     // _loadGames();
@@ -101,49 +83,12 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
       appBar: AppBar(
         title: Text('Pick your game'),
         centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'match_stats') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MatchStatsListScreen(),
-                  ),
-                );
-              }
-
-              if (value == 'about') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AboutScreen()),
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              PopupMenuItem(
-                value: 'match_stats',
-                child: Row(
-                  children: [
-                    Icon(Icons.analytics, size: 20),
-                    SizedBox(width: 8),
-                    Text('View Match Stats'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'about',
-                child: const Text('About'),
-              ), // Add more menu items here as needed
-            ],
-          ),
-        ],
+        actions: [buildSubMenu()],
       ),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/images/background.jpg"),
+            image: const AssetImage(AppAssets.backgroundImage),
             fit: BoxFit.cover,
           ),
         ),
@@ -163,6 +108,52 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
           },
         ),
       ),
+    );
+  }
+
+  //-----------------------------------------------------------------
+
+  Widget buildSubMenu() {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert),
+      onSelected: (value) {
+        switch (value) {
+          case 'manage_games':
+            manageGames();
+            break;
+          case 'manage_players':
+            managePlayers();
+            break;
+          case 'manage_locations':
+            manageLocations();
+            break;
+          case 'about':
+            showAboutScreen();
+            break;
+          default:
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        PopupMenuItem<String>(
+          value: 'manage_games',
+          child: const Text('Manage games'),
+        ),
+
+        PopupMenuItem<String>(
+          value: 'manage_players',
+          child: const Text('Manage players'),
+        ),
+
+        PopupMenuItem<String>(
+          value: 'manage_locations',
+          child: const Text('Manage locations'),
+        ),
+
+        PopupMenuItem<String>(
+          value: 'about',
+          child: const Text('About'),
+        ), // Add more menu items here as needed
+      ],
     );
   }
 
@@ -220,16 +211,22 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
 
     List<Widget> gameButtons = [];
 
-    for (Game gameType in games) {
+    for (Game game in games) {
       gameButtons.add(
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             style: style,
             onPressed: () {
-              gameSelected(gameType.id, gameType.name);
+              gameSelected(game.id, game.name);
             },
-            child: Text(gameType.name),
+            child: Text(
+              game.name,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: game.color.toColor(),
+              ),
+            ),
           ),
         ),
       );
@@ -243,52 +240,14 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
           child: ElevatedButton(
             style: style,
             onPressed: () {
-              manageGames();
-              // setState(() {
-              //   _loadGames();
-              // });
+              historyMenuScreen();
             },
-            child: const Text('Manage Games'),
+            child: const Text('History'),
           ),
         ),
       ),
     );
 
-    gameButtons.add(
-      Padding(
-        padding: const EdgeInsets.only(top: 48),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: style,
-            onPressed: () {
-              setState(() {
-                managePlayers();
-              });
-            },
-            child: const Text('Manage Players'),
-          ),
-        ),
-      ),
-    );
-
-    gameButtons.add(
-      Padding(
-        padding: const EdgeInsets.only(top: 48),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: style,
-            onPressed: () {
-              setState(() {
-                manageLocations();
-              });
-            },
-            child: const Text('Manage Locations'),
-          ),
-        ),
-      ),
-    );
     gameButtons.add(
       Padding(
         padding: const EdgeInsets.only(top: 70),
@@ -349,76 +308,33 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
         child: ListView(children: gameButtons),
       ),
     );
-
-    // return Center(
-    //   child: Padding(
-    //     padding: const EdgeInsets.all(24.0),
-    //     child: Column(
-    //       children: <Widget>[
-    //         SizedBox(
-    //           width: double.infinity,
-    //           child: ElevatedButton(
-    //             style: style,
-    //             onPressed: () {
-    //               gameSelected("Rummy");
-    //             },
-    //             child: const Text('Rummy'),
-    //           ),
-    //         ),
-    //         Padding(
-    //           padding: const EdgeInsets.only(top: 24),
-    //           child: SizedBox(
-    //             width: double.infinity,
-    //             child: ElevatedButton(
-    //               style: style,
-    //               onPressed: () {
-    //                 gameName = "NEWGAME";
-    //               },
-    //               child: const Text('Define New Game'),
-    //             ),
-    //           ),
-    //         ),
-    //       ],
-    //     ),
-    //   ),
-    // );
   }
   //--------------------------------------------------------------
 
-  void gameSelected(int? gameIdSelected, String gameName) async {
-    int gameId = gameIdSelected ?? 0;
-
+  void gameSelected(int gameId, String gameName) async {
     debugMsg("gameSelected gameName $gameName");
+
+    // Load full game from database
+
+    Game game = await gameRepository.getGameByName(gameName);
 
     Match match;
     Match? loadedMatch = await loadMatchDFromSharedPreferences(gameId);
 
     if (loadedMatch == null) {
-      match = Match(gameId: gameId, playerSet: PlayerSet());
+      match = Match(game: game, playerSet: PlayerSet());
 
-      debugMsg("match.gameId is $gameId");
+      debugMsg("match.game.id is ${game.id}");
     } else {
+      loadedMatch.game = game;
       match = loadedMatch;
-      debugMsg("used loadedMatch match.gameId is ${match.gameId}");
+      debugMsg("used loadedMatch match.game.id is ${match.game.id}");
     }
-
-    // however we got to the match, load or reload the game definition
-    // from the database
-    await match.reloadGame();
 
     if (mounted) {
       await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => ListRounds(
-            match: match,
-            matchRepository: matchRepository,
-            gameRepository: gameRepository,
-            playerSetRepository: playerSetRepository,
-            locationRepository: locationRepository,
-            matchStatsRepository: matchStatsRepository,
-          ),
-        ),
+        MaterialPageRoute(builder: (context) => ListRounds(match: match)),
       );
     }
   }
@@ -489,9 +405,7 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
 
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ListGamesScreen(gameRepository: gameRepository),
-      ),
+      MaterialPageRoute(builder: (context) => GamesListScreen()),
     );
 
     refreshData();
@@ -507,13 +421,39 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
     if (mounted) {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => Locations2ListScreen()),
+        MaterialPageRoute(builder: (context) => LocationsListScreen()),
       );
     }
 
     refreshData();
 
     debugMsg("end of manageGame");
+  }
+
+  //---------------------------------------------------------------------------
+
+  Future<void> historyMenuScreen() async {
+    debugMsg("historyMenuScreen");
+    if (mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HistoryMenu()),
+      );
+    }
+    debugMsg("end of historyMenuScreen");
+  }
+
+  //--------------------------------------------------------------
+
+  void showAboutScreen() async {
+    debugMsg("showAboutScreen");
+    if (mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AboutScreen()),
+      );
+    }
+    debugMsg("end of showAboutScreen");
   }
 
   //--------------------------------------------------------------
@@ -560,4 +500,6 @@ class _MainMenuState extends State<MainMenu> with MyMixin {
       );
     }
   }
+
+  //---------------------------------------------------------------------------
 }

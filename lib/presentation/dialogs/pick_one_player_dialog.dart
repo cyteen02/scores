@@ -10,15 +10,15 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/data/extensions/int_extensions.dart';
 import 'package:scores/data/models/player.dart';
+import 'package:scores/presentation/widgets/player_listtile.dart';
 import 'package:scores/utils/my_utils.dart';
 
-Future<int?> pickOnePlayer(
+Future<Player?> pickOnePlayer(
   BuildContext context,
   List<Player> playersList,
 ) async {
-  return showDialog<int>(
+  return showDialog<Player>(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
@@ -29,14 +29,12 @@ Future<int?> pickOnePlayer(
             shrinkWrap: true,
             itemCount: playersList.length,
             itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(
-                  playersList[index].name,
-                  style: TextStyle(color: playersList[index].color.toColor()),
-                ),
-                onTap: () {
+//              return playerListTile(context, playersList[index], onTapCallback);
+              return PlayerListTile(
+                player: playersList[index],
+                onTap: (context, player) {
                   debugMsg("showPlayerPicker onTap index $index");
-                  Navigator.of(context).pop(index);
+                  Navigator.of(context).pop(player);
                 },
               );
             },
@@ -52,3 +50,5 @@ Future<int?> pickOnePlayer(
     },
   );
 }
+//---------------------------------------------------------------------------
+

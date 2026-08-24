@@ -11,34 +11,14 @@
 
 import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/match_history.dart';
-import 'package:scores/data/repositories/database_helper.dart';
-import 'package:scores/data/repositories/location_repository.dart';
-import 'package:scores/data/repositories/match_history_repository.dart';
 
-import 'package:scores/data/repositories/match_player_stats_repository.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
-import 'package:scores/data/repositories/player_set_repository.dart';
-//import 'package:scores/data/models/match_player_stats.dart';
-//import 'package:scores/data/models/match_stats.dart';
+import 'package:scores/data/repositories/database_helper.dart';
+import 'package:scores/data/repositories/repositories.dart';
+
 import 'package:scores/utils/my_utils.dart';
-//import 'package:sqflite/sqflite.dart';
 
 class MatchRepository {
   final dbHelper = DatabaseHelper.instance;
-
-  final PlayerSetRepository playerSetRepository;
-  final LocationRepository locationRepository;
-  final MatchHistoryRepository matchHistoryRepository;
-  final MatchStatsRepository matchStatsRepository;
-  final MatchPlayerStatsRepository matchPlayerStatsRepository;
-
-  MatchRepository(
-    this.playerSetRepository,
-    this.locationRepository,
-    this.matchHistoryRepository,
-    this.matchStatsRepository,
-    this.matchPlayerStatsRepository,
-  );
 
   //--------------------------------------------------------------
 
@@ -60,7 +40,7 @@ class MatchRepository {
   await matchHistoryRepository.insert(
     MatchHistory(
       matchId: match.id,
-      gameId: match.gameId,
+      gameId: match.game.id,
       playerSetId: playerSetId,
       locationId: match.location?.id,
     ),

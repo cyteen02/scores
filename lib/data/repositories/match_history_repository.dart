@@ -17,21 +17,6 @@ import 'package:sqflite/sqflite.dart';
 class MatchHistoryRepository {
   final dbHelper = DatabaseHelper.instance;
 
-  static const String tableName = 'match_history';
-
-  static const String createTableSQL =
-      '''
-    CREATE TABLE $tableName (
-        match_id INTEGER PRIMARY KEY,
-        game_id INTEGER NOT NULL,
-        player_set_id NOT NULL,
-        match_date TEXT NOT NULL,        
-        location_id INTEGER REFERENCES location(id) ON DELETE SET NULL,
-       FOREIGN KEY (game_id) REFERENCES game (id),
-       FOREIGN KEY (player_set_id) REFERENCES player_set (id)       
-    )
-  ''';
-
   MatchHistoryRepository();
 
   //---------------------------------------------------------------------------
@@ -42,7 +27,10 @@ class MatchHistoryRepository {
     debugMsg("MatchHistoryRepository insert matchHistory $matchHistory");
     try {
       final db = await dbHelper.database;
-      return await db.insert(tableName, matchHistory.toMap());
+      return await db.insert(
+        DatabaseHelper.tableMatchHistory,
+        matchHistory.toMap(),
+      );
     } on Exception catch (e) {
       debugMsg("ERROR inserting match history: $e");
       rethrow; // Let the caller handle it
@@ -55,7 +43,7 @@ class MatchHistoryRepository {
   Future<int> update(MatchHistory matchHistory) async {
     final db = await dbHelper.database;
     return await db.update(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       matchHistory.toMap(),
       where: 'match_id = ?',
       whereArgs: [matchHistory.matchId],
@@ -68,7 +56,7 @@ class MatchHistoryRepository {
   Future<int> delete(int matchId) async {
     final db = await dbHelper.database;
     return await db.delete(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'match_id = ?',
       whereArgs: [matchId],
     );
@@ -81,7 +69,7 @@ class MatchHistoryRepository {
     final db = await dbHelper.database;
 
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'match_id = ?',
       whereArgs: [matchId],
     );
@@ -99,7 +87,10 @@ class MatchHistoryRepository {
   Future<List<MatchHistory>> getAll() async {
     final db = await dbHelper.database;
 
-    final maps = await db.query(tableName, orderBy: 'match_date DESC');
+    final maps = await db.query(
+      DatabaseHelper.tableMatchHistory,
+      orderBy: 'match_date DESC',
+    );
     return maps.map((map) => MatchHistory.fromMap(map)).toList();
   }
   //---------------------------------------------------------------------------
@@ -109,7 +100,7 @@ class MatchHistoryRepository {
     final db = await dbHelper.database;
 
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'game_id = ?',
       whereArgs: [gameId],
       orderBy: 'match_date DESC',
@@ -123,7 +114,7 @@ class MatchHistoryRepository {
   Future<List<MatchHistory>> getByPlayerSetId(int playerSetId) async {
     final db = await dbHelper.database;
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'player_set_id = ?',
       whereArgs: [playerSetId],
       orderBy: 'match_date DESC',
@@ -141,7 +132,7 @@ class MatchHistoryRepository {
     final db = await dbHelper.database;
 
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'match_date BETWEEN ? AND ?',
       whereArgs: [startDate.toIso8601String(), endDate.toIso8601String()],
       orderBy: 'match_date DESC',
@@ -159,7 +150,7 @@ class MatchHistoryRepository {
     final db = await dbHelper.database;
 
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'game_id = ? AND player_set_id = ?',
       whereArgs: [gameId, playerSetId],
       orderBy: 'match_date DESC',
@@ -173,7 +164,7 @@ class MatchHistoryRepository {
   Future<List<MatchHistory>> getRecent(int limit) async {
     final db = await dbHelper.database;
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       orderBy: 'match_date DESC',
       limit: limit,
     );
@@ -186,7 +177,7 @@ class MatchHistoryRepository {
   Future<MatchHistory?> getMostRecentForGame(int gameId) async {
     final db = await dbHelper.database;
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'game_id = ?',
       whereArgs: [gameId],
       orderBy: 'match_date DESC',
@@ -206,7 +197,7 @@ class MatchHistoryRepository {
   Future<int> count() async {
     final db = await dbHelper.database;
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM $tableName',
+      'SELECT COUNT(*) as count FROM $DatabaseHelper.tableMatchHistory',
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -217,7 +208,7 @@ class MatchHistoryRepository {
   Future<int> countByGameId(String gameId) async {
     final db = await dbHelper.database;
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM $tableName WHERE game_id = ?',
+      'SELECT COUNT(*) as count FROM $DatabaseHelper.tableMatchHistory WHERE game_id = ?',
       [gameId],
     );
     return Sqflite.firstIntValue(result) ?? 0;
@@ -229,7 +220,7 @@ class MatchHistoryRepository {
   Future<int> countByPlayerSetId(int playerSetId) async {
     final db = await dbHelper.database;
     final result = await db.rawQuery(
-      'SELECT COUNT(*) as count FROM $tableName WHERE player_set_id = ?',
+      'SELECT COUNT(*) as count FROM $DatabaseHelper.tableMatchHistory WHERE player_set_id = ?',
       [playerSetId],
     );
     return Sqflite.firstIntValue(result) ?? 0;
@@ -241,7 +232,7 @@ class MatchHistoryRepository {
   Future<List<int>> getAllGameIds() async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
-      'SELECT DISTINCT game_id FROM $tableName ORDER BY game_id',
+      'SELECT DISTINCT game_id FROM $DatabaseHelper.tableMatchHistory ORDER BY game_id',
     );
     return maps.map((map) => map['game_id'] as int).toList();
   }
@@ -252,7 +243,7 @@ class MatchHistoryRepository {
   Future<List<int>> getAllPlayerSetIds() async {
     final db = await dbHelper.database;
     final maps = await db.rawQuery(
-      'SELECT DISTINCT player_set_id FROM $tableName ORDER BY player_set_id',
+      'SELECT DISTINCT player_set_id FROM $DatabaseHelper.tableMatchHistory ORDER BY player_set_id',
     );
     return maps.map((map) => map['player_set_id'] as int).toList();
   }
@@ -263,7 +254,7 @@ class MatchHistoryRepository {
   Future<bool> exists(int matchId) async {
     final db = await dbHelper.database;
     final maps = await db.query(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'match_id = ?',
       whereArgs: [matchId],
       limit: 1,
@@ -277,7 +268,7 @@ class MatchHistoryRepository {
   Future<int> deleteByGameId(int gameId) async {
     final db = await dbHelper.database;
     return await db.delete(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'game_id = ?',
       whereArgs: [gameId],
     );
@@ -288,7 +279,7 @@ class MatchHistoryRepository {
   Future<int> deleteByPlayerSetId(int playerSetId) async {
     final db = await dbHelper.database;
     return await db.delete(
-      tableName,
+      DatabaseHelper.tableMatchHistory,
       where: 'player_set_id = ?',
       whereArgs: [playerSetId],
     );
@@ -298,7 +289,7 @@ class MatchHistoryRepository {
   // Delete all match history records
   Future<int> deleteAll() async {
     final db = await dbHelper.database;
-    return await db.delete(tableName);
+    return await db.delete(DatabaseHelper.tableMatchHistory);
   }
 
   //---------------------------------------------------------------------------

@@ -9,60 +9,49 @@
 *
 *----------------------------------------------------------------------------*/
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:scores/business/services/match_stats_service.dart';
-import 'package:scores/data/extensions/int_extensions.dart';
-import 'package:scores/data/models/location.dart';
-import 'package:scores/data/models/player_set.dart';
-import 'package:scores/data/models/round_label.dart';
-import 'package:scores/data/repositories/game_repository.dart';
-import 'package:scores/data/repositories/location_repository.dart';
-
-import 'package:scores/data/repositories/match_repository.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
-import 'package:scores/data/repositories/player_repository.dart';
-import 'package:scores/data/repositories/player_set_repository.dart';
-import 'package:scores/presentation/dialogs/pick_location_dialog.dart';
-
-import 'package:scores/presentation/dialogs/reorder_players_list.dart';
-
-import 'package:scores/presentation/mixin/my_mixin.dart';
-import 'package:scores/presentation/dialogs/pick_multiple_players_dialog.dart';
-import 'package:scores/presentation/dialogs/pick_num_players.dart';
-import 'package:scores/presentation/dialogs/pick_one_player_dialog.dart';
-import 'package:scores/presentation/screens/end_match_screen.dart';
-import 'package:scores/presentation/screens/next_round_screen.dart';
-import 'package:scores/presentation/screens/show_graph.dart';
-import 'package:scores/presentation/screens/stats_screen.dart';
-import 'package:scores/presentation/widgets/list_rounds_bottom_nav_bar.dart';
-import 'package:scores/utils/my_utils.dart';
 
 import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/game.dart';
 import 'package:scores/data/models/player.dart';
 import 'package:scores/data/models/round.dart';
-import 'package:scores/presentation/screens/add_round_screen.dart';
+import 'package:scores/data/models/location.dart';
+import 'package:scores/data/models/player_set.dart';
+import 'package:scores/data/models/round_label.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
+
 import 'package:scores/data/services/match_storage.dart';
+
+import 'package:scores/business/services/match_stats_service.dart';
+
+import 'package:scores/data/extensions/int_extensions.dart';
+
+import 'package:scores/presentation/dialogs/pick_location_dialog.dart';
+import 'package:scores/presentation/dialogs/reorder_players_list.dart';
+import 'package:scores/presentation/dialogs/pick_multiple_players_dialog.dart';
+import 'package:scores/presentation/dialogs/pick_num_players.dart';
+import 'package:scores/presentation/dialogs/pick_one_player_dialog.dart';
+
+import 'package:scores/presentation/screens/add_round_screen.dart';
+import 'package:scores/presentation/screens/end_match_screen.dart';
+import 'package:scores/presentation/screens/next_round_screen.dart';
+import 'package:scores/presentation/screens/show_graph.dart';
+import 'package:scores/presentation/screens/stats_screen.dart';
+import 'package:scores/presentation/widgets/list_rounds_bottom_nav_bar.dart';
+
+import 'package:scores/utils/my_utils.dart';
+
+import 'package:scores/presentation/mixin/my_mixin.dart';
 
 //---------------------------------------------------------------
 
 class ListRounds extends StatefulWidget {
-  const ListRounds({
-    super.key,
-    required this.match,
-    required this.matchRepository,
-    required this.gameRepository,
-    required this.playerSetRepository,
-    required this.locationRepository,
-    required this.matchStatsRepository,
-  });
+  const ListRounds({super.key, required this.match});
 
   final Match match;
-  final MatchRepository matchRepository;
-  final GameRepository gameRepository;
-  final PlayerSetRepository playerSetRepository;
-  final LocationRepository locationRepository;
-  final MatchStatsRepository matchStatsRepository;
 
   @override
   State<ListRounds> createState() => _ListRoundsState();
@@ -86,11 +75,6 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   bool isLoading = true;
   late Match match;
   late Game game;
-  late MatchRepository matchRepository;
-  late GameRepository gameRepository;
-  late PlayerSetRepository playerSetRepository;
-  late LocationRepository locationRepository;
-  late MatchStatsRepository matchStatsRepository;
 
   double roundLabelsWidth = 0.0;
 
@@ -103,30 +87,23 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     debugMsg("_ListRoundsStateinitState", box: true);
     super.initState();
 
-    debugMsg("copying repositories");
-    matchRepository = widget.matchRepository;
-    gameRepository = widget.gameRepository;
-    playerSetRepository = widget.playerSetRepository;
-    //   locationRepository = widget.locationRepository;
-    matchStatsRepository = widget.matchStatsRepository;
-
     debugMsg("initState widget.match ${widget.match}");
     match = widget.match; // Copy to local state
-    debugMsg("starting match.gameId ${match.gameId}");
+    debugMsg("starting match.game.id ${match.game.id}");
 
     //    game = Game.name(match.name);
 
     // If fixed length, but no rounds set up yet - do this now
-    if ((match.gameLengthType == GameLengthType.fixedLength) &&
+    if ((match.game.gameLengthType == GameLengthType.fixedLength) &&
         (match.showFutureRoundsType() ==
             ShowFutureRoundsType.showAllFutureRounds) &&
         (match.numRoundsPlayed() == 0)) {
       match.initAllRounds();
     }
 
-    debugMsg("starting match.gameId ${match.gameId}");
+    debugMsg("starting match.game.id ${match.game.id}");
     if (match.useRoundLabels()) {
-      roundLabelsWidth = calculateRoundLabelsWidth(match.roundLabels);
+      roundLabelsWidth = calculateRoundLabelsWidth(match.game.roundLabels);
     } else {
       debugMsg("not using round labels");
     }
@@ -155,9 +132,10 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     String title = match.location == null
         ? match.name
         : "${match.name} @ ${match.location?.name}";
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title, style: TextStyle(color: match.game.color.toColor())),
         centerTitle: true,
         actions: [
           IconButton(
@@ -185,8 +163,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       ),
       body: Container(child: listRounds(context)),
       floatingActionButton:
-          (match.gameLengthType == GameLengthType.fixedLength &&
-              match.showFutureRounds ==
+          (match.game.gameLengthType == GameLengthType.fixedLength &&
+              match.game.showFutureRoundsType ==
                   ShowFutureRoundsType.showAllFutureRounds)
           ? null
           : FloatingActionButton(
@@ -242,29 +220,29 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     for (int r = 0; r < match.rounds.length; r++) {
       RoundLabel? roundLabel;
       if (match.useRoundLabels()) {
-        roundLabel = match.roundLabels[r];
+        roundLabel = match.game.roundLabels[r];
       }
       rows.add(roundScoresRow(context, roundLabel, match.rounds[r]));
     }
 
     if ((match.showFutureRoundsType() !=
             ShowFutureRoundsType.showNoFutureRounds) &&
-        (match.rounds.length >= match.roundLabels.length) &&
-        (match.gameLengthType != GameLengthType.fixedLength)) {
+        (match.rounds.length >= match.game.roundLabels.length) &&
+        (match.game.gameLengthType != GameLengthType.fixedLength)) {
       rows.add(endMatchRow());
     } else if ((match.showFutureRoundsType() ==
             ShowFutureRoundsType.showNextFutureRound) &&
-        (match.rounds.length < match.roundLabels.length)) {
+        (match.rounds.length < match.game.roundLabels.length)) {
       rows.add(
         RoundRow(
-          roundLabel: match.roundLabels[match.rounds.length],
+          roundLabel: match.game.roundLabels[match.rounds.length],
           row: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Center(
               child: InkWell(
                 onTap: showNextRoundScreen,
                 child: Text(
-                  "Next round is ${match.roundLabels[match.rounds.length].name}",
+                  "Next round is ${match.game.roundLabels[match.rounds.length].name}",
                   style: TextStyle(fontSize: 24),
                 ),
               ),
@@ -276,10 +254,10 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         ShowFutureRoundsType.showAllFutureRounds) {
       for (
         int index = match.rounds.length;
-        index < match.roundLabels.length;
+        index < match.game.roundLabels.length;
         index++
       ) {
-        rows.add(futureRoundsRow(context, match.roundLabels[index]));
+        rows.add(futureRoundsRow(context, match.game.roundLabels[index]));
       }
     }
 
@@ -323,12 +301,19 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   RoundRow playersRow(BuildContext context, List<Player> players) {
     List<Widget> playerNames = [];
 
+    // if there are more than 3 players but the names vertically
+    // ie rotated by 3 quarters
     final rotateBoxquarterTurns = players.length > 3 ? 3 : 0;
 
     for (Player player in players) {
+      final bool hasPhoto =
+          player.photoPath.isNotEmpty && File(player.photoPath).existsSync();
+
       debugMsg(
-        "playersRow adding ${player.name} colour ${player.color} to the row",
+        "playersRow adding ${player.name} color ${player.color} hasPhoto $hasPhoto to the row",
       );
+
+      // 1. Check if the player has a valid photo file saved
 
       playerNames.add(
         MenuAnchor(
@@ -345,24 +330,53 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
                   controller.open();
                 }
               },
+
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Center(
+                  // Rotating the whole group keeps the avatar & text aligned!
                   child: RotatedBox(
                     quarterTurns: rotateBoxquarterTurns,
-                    child: Text(
-                      player.name,
-                      style: TextStyle(
-                        color: player.color.toColor(),
-                        fontSize: 30,
-                      ),
-                      textAlign: TextAlign.center,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 6.0,
+                      children: [
+                        CircleAvatar(
+                          radius:
+                              16, // Nice small badge size for the header row
+                          backgroundColor: player.color.toColor(),
+                          backgroundImage: hasPhoto
+                              ? FileImage(File(player.photoPath))
+                              : null,
+                          child: hasPhoto
+                              ? null
+                              : Text(
+                                  player.name.isNotEmpty
+                                      ? player.name[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                        Text(
+                          player.name,
+                          style: TextStyle(
+                            color: player.color.toColor(),
+                            fontSize: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 8), // Gap between avatar and name
+                      ],
                     ),
                   ),
                 ),
               ),
             );
           },
+
           menuChildren: [
             MenuItemButton(
               child: Center(child: Text('Change player')),
@@ -378,10 +392,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
             MenuItemButton(
               child: Center(child: Text('Reorder players')),
               onPressed: () async {
-                final newOrder = await showReorderPlayersDialog(
-                  context,
-                  players,
-                );
+                final newOrder = await ReorderPlayersDialog.show(context, players);
                 if (newOrder != null) {
                   setState(() => match.replacePlayers(newOrder));
                 }
@@ -609,37 +620,6 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         1;
   }
 
-  //---------------------------------------------------------------
-
-  // Future<dynamic> _confirmDelete3(
-  //   BuildContext context,
-  //   Match match,
-  //   Round round,
-  // ) async {
-  //   return showDialog(
-  //     context: context,
-  //     builder: (BuildContext newContext) {
-  //       return AlertDialog(
-  //         title: const Text('Delete Round'),
-  //         content: Text('Are you sure you want to delete ${round.id}?'),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(newContext).pop(),
-  //             child: const Text('CANCEL'),
-  //           ),
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.of(newContext).pop();
-  //               _deleteRound(match, round);
-  //             },
-  //             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
   //------------------------------------------------------------------
 
   Widget scoresRow2(Round round) {
@@ -690,18 +670,6 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       rowChildren.add(Expanded(child: textItems[item]));
     }
 
-    // for (Widget item in textItems) {
-    //   if (item is VerticalDivider) {
-    //     rowChildren.add(item);
-    //   } else {
-    //     rowChildren.add(
-    //       Expanded(child: item),
-    //       // Expanded(
-    //       //   child: Padding(padding: const EdgeInsets.all(14.0), child: item),
-    //       // ),
-    //     );
-    //   }
-    // }
     return IntrinsicHeight(child: Row(children: rowChildren));
   }
 
@@ -710,8 +678,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   Future<void> addButtonPressed(BuildContext context) async {
     debugMsg("addButtonPressed ... waiting");
 
-    if (match.fixedNumRounds) {
-      if (match.rounds.length >= match.roundLabels.length) {
+    if (match.game.fixedNumRounds) {
+      if (match.rounds.length >= match.game.roundLabels.length) {
         // the match has ended - no more round adds!
         showPopupMessage(context, "Match ended - no more scores to add");
         return;
@@ -871,7 +839,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       MaterialPageRoute(
         builder: (context) => NextRoundScreen(
           match: match,
-          nextRoundLabel: match.roundLabels[match.rounds.length],
+          nextRoundLabel: match.game.roundLabels[match.rounds.length],
         ),
       ),
     );
@@ -921,13 +889,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
         if (context.mounted) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => StatsScreen(
-                match: match,
-                matchRepository: matchRepository,
-                matchStatsRepository: matchStatsRepository,
-              ),
-            ),
+            MaterialPageRoute(builder: (context) => StatsScreen(match: match)),
           );
         }
 
@@ -957,11 +919,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EndMatchScreen(
-                    match: match,
-                    matchRepository: matchRepository,
-                    matchStatsRepository: matchStatsRepository,
-                  ),
+                  builder: (context) => EndMatchScreen(match: match),
                 ),
               );
             }
@@ -1002,11 +960,11 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       setState(() {
         match = newMatch.copyWith(
           id: newMatch.id,
-          gameId: newMatch.gameId,
+          game: newMatch.game,
           playerSet: newMatch.playerSet,
           rounds: newMatch.rounds,
         );
-        match.reloadGame();
+        //        match.reloadGame();
         debugMsg("after playersButtonTapped match: $match");
       });
     }
@@ -1053,8 +1011,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   Future<bool> resetMatch(BuildContext context) async {
     // Reload the game defintion and reset the scores
 
-    // match.game = await gameRepository.getGameByName(match.game.name);
-    match.reloadGame();
+    match.game = await gameRepository.getGameByName(match.game.name);
+    //    match.reloadGame();
 
     PlayerSet? loadedPlayerSet = await playerSetRepository.getById(
       match.playerSet.id ?? 0,
@@ -1073,8 +1031,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   Future<bool> changePlayer(BuildContext context, Player oldPlayer) async {
     debugMsg("changePlayer oldPlayer $oldPlayer");
 
-    final playerRespository = PlayerRepository();
-    List<Player> allPlayersList = await playerRespository.getAllPlayers();
+    List<Player> allPlayersList = await playerRepository.getAllPlayers();
 
     // remove the existing players from the list to pick from
     for (Player p in match.players) {
@@ -1082,19 +1039,19 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     }
 
     if (context.mounted) {
-      int? newPlayerIndex = await pickOnePlayer(context, allPlayersList);
+      Player? newPlayer = await pickOnePlayer(context, allPlayersList);
 
-      if (newPlayerIndex == null) {
+      if (newPlayer == null) {
         return false;
       }
 
-      if (oldPlayer.name == allPlayersList[newPlayerIndex].name) {
+      if (oldPlayer.name == newPlayer.name) {
         return false;
       }
 
-      debugMsg("newPlayer is ${allPlayersList[newPlayerIndex]}");
+      debugMsg("newPlayer is ${newPlayer.name}");
 
-      match.replacePlayer(oldPlayer, allPlayersList[newPlayerIndex]);
+      match.replacePlayer(oldPlayer, newPlayer);
     }
     return true;
   }
@@ -1151,14 +1108,14 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
       return null;
     }
 
-    Match? savedMatch = await loadMatchData(match.gameId, newNumPlayers);
+    Match? savedMatch = await loadMatchData(match.game.id, newNumPlayers);
 
     if (savedMatch != null) {
       debugMsg("using saved match data");
 
       Match newMatch = match.copyWith(
         id: savedMatch.id,
-        gameId: savedMatch.gameId,
+        game: savedMatch.game,
         playerSet: savedMatch.playerSet,
         rounds: savedMatch.rounds,
       );
@@ -1171,8 +1128,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
     // otherwise get the user to pick new players
     // and set up a new match
 
-    final playerRespository = PlayerRepository();
-    List<Player> allPlayers = await playerRespository.getAllPlayers();
+    List<Player> allPlayers = await playerRepository.getAllPlayers();
 
     if (!context.mounted) return null;
     List<Player> newPlayers = await pickMultiplePlayersDialog(
@@ -1203,11 +1159,11 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
 
     Match newMatch = match.copyWith(
       id: match.id,
-      gameId: match.gameId,
+      game: match.game,
       playerSet: playerSet,
     );
 
-    //    newMatch.initFirstRound();
+    newMatch.initFirstRound();
 
     debugMsg("newMatch $newMatch");
 
@@ -1247,8 +1203,8 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   //   // otherwise get the user to pick new players
   //   // and set up a new match
 
-  //   final playerRespository = PlayerRepository();
-  //   List<Player> allPlayers = await playerRespository.getAllPlayers();
+  //   final playerRepository = PlayerRepository();
+  //   List<Player> allPlayers = await playerRepository.getAllPlayers();
 
   //   if (context.mounted) {
   //     final newPlayers = await pickMultiplePlayersDialog(
@@ -1387,7 +1343,7 @@ class _ListRoundsState extends State<ListRounds> with MyMixin {
   //-----------------------------------------------------------------
 
   Future<void> _loadLocations() async {
-    locations = await widget.locationRepository.getAll();
+    locations = await locationRepository.getAll();
     setState(() {});
   }
 

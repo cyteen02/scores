@@ -12,15 +12,21 @@
 class Location {
   final int? id;
   final String name;
-  final String? description;
-  final int color;
+  String? description;
+  int color;
+  String photoPath;
+
+  //---------------------------------------------------------------------------
 
   Location({
     this.id,
     required this.name,
     this.description,
-    required this.color,
+    this.color = 0,
+    this.photoPath = "",
   });
+
+  //---------------------------------------------------------------------------
 
   // Convert a Location to a Map for database insertion
   Map<String, dynamic> toMap() {
@@ -29,10 +35,11 @@ class Location {
       'name': name,
       'description': description,
       'color': color,
+      'photoPath': photoPath,
     };
   }
 
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
 
   // Create a Location from a Map (from database)
   factory Location.fromMap(Map<String, dynamic> map) {
@@ -41,27 +48,32 @@ class Location {
       name: map['name'] as String,
       description: map['description'] as String?,
       color: map['color'] as int,
+      photoPath: ( map['photoPath'] as String? ) ?? "",
     );
   }
 
-//---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
   // Create a copy with optional field updates
   Location copyWith({
     int? id,
     String? name,
     String? description,
     int? color,
+    String? photoPath,
   }) {
     return Location(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       color: color ?? this.color,
+      photoPath: photoPath ?? this.photoPath,
     );
   }
 
+  //---------------------------------------------------------------------------
+
   @override
   String toString() {
-    return 'Location{id: $id, name: $name, description: $description, color: $color}';
+    return 'Location{id: $id, name: $name, description: $description, color: $color photoPath $photoPath}';
   }
 }

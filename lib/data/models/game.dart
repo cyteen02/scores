@@ -10,6 +10,8 @@
 *----------------------------------------------------------------------------*/
 
 //import 'package:scores/data/models/player_set.dart';
+import 'package:flutter/material.dart';
+import 'package:scores/data/extensions/color_extensions.dart';
 import 'package:scores/data/models/round_label.dart';
 import 'package:scores/presentation/mixin/my_mixin.dart';
 
@@ -39,16 +41,18 @@ enum GameLengthType {
 }
 
 class Game with MyMixin {
-  int? id;
+  int id;
   String name;
+  int color;
   List<RoundLabel> roundLabels;
   ShowFutureRoundsType showFutureRoundsType;
   WinCondition winCondition = WinCondition.highestScore;
   GameLengthType gameLengthType = GameLengthType.variableLength;
 
   Game({
-    this.id,
+    this.id = 0,
     required this.name,
+    this.color = 0,
     this.roundLabels = const [],
     this.winCondition = WinCondition.highestScore,
     this.showFutureRoundsType = ShowFutureRoundsType.showNoFutureRounds,
@@ -57,7 +61,7 @@ class Game with MyMixin {
 
   //-----------------------------------------------------------------
 
-  bool fixedNumRounds() {
+  bool get fixedNumRounds {
     return gameLengthType == GameLengthType.fixedLength;
     //    return roundLabels.isNotEmpty;
     // return showFutureRoundsType !=
@@ -76,6 +80,7 @@ class Game with MyMixin {
     return {
       'id': id,
       'name': name,
+      'color': color,
       'showFutureRoundsType': showFutureRoundsType.name,
       'winCondition': winCondition.name,
       'gameLengthType': gameLengthType.name,
@@ -89,9 +94,10 @@ class Game with MyMixin {
     Map<String, dynamic> map, {
     List<RoundLabel>? roundLabels,
   }) {
-    return Game(
-      id: map['id'] as int?,
+    Game game = Game(
+      id: map['id'] as int,
       name: map['name'] as String,
+      color: (map['color'] ?? Colors.black) as int,
       roundLabels: roundLabels ?? [],
       showFutureRoundsType: ShowFutureRoundsType.values.byName(
         map['showFutureRoundsType'],
@@ -99,6 +105,13 @@ class Game with MyMixin {
       winCondition: WinCondition.values.byName(map['winCondition']),
       gameLengthType: GameLengthType.values.byName(map['gameLengthType']),
     );
+
+    // patch the default game color to support old data where color wasn't defined
+    if (game.color == 0) {
+      game.color = Colors.black.toInt();
+    }
+
+    return game;
   }
 
   //---------------------------------------------------------------------------
@@ -108,6 +121,7 @@ class Game with MyMixin {
     return {
       'id': id,
       'name': name,
+      'color': color,
       'roundLabels': roundLabels.map((label) => label.toJson()).toList(),
       'showFutureRoundsType': showFutureRoundsType.name,
       'winCondition': winCondition.name,
@@ -119,8 +133,9 @@ class Game with MyMixin {
   // Create Game from JSON Map
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
-      id: json['id'] as int?,
+      id: json['id'] as int,
       name: json['name'] as String,
+      color: (json['color'] ?? Colors.black) as int,
       roundLabels: (json['roundLabels'] as List<dynamic>)
           .map((labelJson) => RoundLabel.fromJson(labelJson))
           .toList(),
@@ -143,6 +158,7 @@ class Game with MyMixin {
   Game copyWith({
     int? id,
     String? name,
+    int? color,
     List<RoundLabel>? roundLabels,
     ShowFutureRoundsType? showFutureRoundsType,
     WinCondition? winCondition,
@@ -151,6 +167,7 @@ class Game with MyMixin {
     return Game(
       id: id ?? this.id,
       name: name ?? this.name,
+      color: id ?? this.color,
       roundLabels: roundLabels ?? this.roundLabels,
       winCondition: winCondition ?? this.winCondition,
       showFutureRoundsType: showFutureRoundsType ?? this.showFutureRoundsType,

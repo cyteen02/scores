@@ -10,27 +10,25 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/data/repositories/game_repository.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
 import 'package:scores/data/models/game.dart';
-import 'package:scores/presentation/screens/game_edit_screen.dart';
-//import 'package:scores/presentation/screens/game_form_screen.dart';
+
+import 'package:scores/presentation/screens/old/game_form_screen.dart';
+
 import 'package:scores/utils/my_utils.dart';
 
-class ListGamesScreen extends StatefulWidget {
-  
-  final GameRepository gameRepository;
+//---------------------------------------------------------------------------
 
-  const ListGamesScreen({super.key,
-            required this.gameRepository});
+class ManageGamesScreen extends StatefulWidget {
+  const ManageGamesScreen({super.key});
 
   @override
-  State<ListGamesScreen> createState() => _ListGamesScreenState();
+  State<ManageGamesScreen> createState() => _ManageGamesScreenState();
 }
 
-class _ListGamesScreenState extends State<ListGamesScreen> {
+class _ManageGamesScreenState extends State<ManageGamesScreen> {
   List<Game> games = [];
-  // final dbHelper = DatabaseHelper.instance;
-  late GameRepository gameRepository;
   bool isLoading = true;
 
   //--------------------------------------------------------------
@@ -38,24 +36,20 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
   @override
   void initState() {
     super.initState();
-    gameRepository = widget.gameRepository;
+    _loadGames();
   }
 
   //--------------------------------------------------------------
 
-  //  Future<void> _loadGames() async {
-
-  Future<Map<String, dynamic>> _fetchGamesListData() async {
+  Future<void> _loadGames() async {
     setState(() => isLoading = true);
 
-    final loadedGames = await widget.gameRepository.getAll();
-
-    return {'gamesList': loadedGames};
-    // setState(() {
-    //   games = loadedGames;
-    //   debugMsg("_loadGames loaded ${games.length} games");
-    //   isLoading = false;
-    // });
+    final loadedGames = await gameRepository.getAll();
+    setState(() {
+      games = loadedGames;
+      debugMsg("_loadGames loaded ${games.length} games");
+      isLoading = false;
+    });
   }
 
   //--------------------------------------------------------------
@@ -63,32 +57,18 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Games'), centerTitle: true),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _fetchGamesListData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error loading data'));
-          }
-
-          final data = snapshot.data!;
-          return _buildGamesListScreen(data);
-        },
+      appBar: AppBar(
+        title: const Text('Games to play'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _navigateToEdit(null),
+          ),
+        ],
       ),
-    );
-  }
-
-  //--------------------------------------------------------------
-  //
-  Widget _buildGamesListScreen(Map<String, dynamic> data) {
-    games = data['gamesList'];
-
-    return Scaffold(
-      body: games.isEmpty
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : games.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -101,7 +81,7 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap the + button to add someone',
+                    'Tap the + button to add a game',
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                   ),
                 ],
@@ -128,8 +108,6 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
 
   Widget gameDismissable(Game game, int index) {
     debugMsg("gameDismissable index $index");
-
-    debugMsg("gameDismissable game $game");
 
     return Dismissible(
       key: Key(game.name + index.toString()),
@@ -178,27 +156,9 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
+              Text('${game.roundLabels.length} rounds'),
               Text(
-                "Win condition: ${game.winCondition.description}",
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blue,
-                ),
-              ),
-              Text(
-                ( game.gameLengthType == GameLengthType.variableLength 
-                  ? "Game length: ${game.gameLengthType.description}"
-                  : "Game length: ${game.gameLengthType.description} - ${game.roundLabels.length} rounds"
-                ),
-                style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: Colors.blue,
-                ),
-              ),
-
-              if ( game.gameLengthType == GameLengthType.fixedLength ) 
-              Text(
-                game.showFutureRoundsType.description,
+                game.showFutureRoundsType.name,
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
                   color: Colors.blue,
@@ -210,7 +170,7 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
           onTap: () => _editGame(index),
         ),
         // trailing: const Icon(Icons.chevron_right),
-        // onTap: () => _navigateToEdit(gameType),
+        // onTap: () => _navigateToEdit(game),
       ),
 
       // child: ListTile(
@@ -247,7 +207,7 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
       //     ],
       //   ),
       //   trailing: const Icon(Icons.chevron_right),
-      //   onTap: () => _editGameType(context, gameType),
+      //   onTap: () => _editGame(context, game),
       // ),
       // ),
     );
@@ -255,18 +215,18 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
   //--------------------------------------------------------------
 
   void _addGame(BuildContext context) async {
-    // Navigate to GameScreen to create new player
+    // Navigate to GameFormScreen to create new player
     final Game? newGame = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => GameEditScreen(gameRepository: widget.gameRepository)),
+      MaterialPageRoute(
+        builder: (context) => OldGameFormScreen(),
+      ),
     );
 
     if (newGame != null) {
       setState(() {
         games.add(newGame);
-        if (mounted) {
-          showPopupMessage(context, '${newGame.name} added');
-        }
+        showPopupMessage(context, '${newGame.name} added');
       });
     }
   }
@@ -278,18 +238,16 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
     final Game? updatedGame = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GameEditScreen(gameRepository: gameRepository,
-                                  game: games[index]),
+        builder: (context) =>
+            OldGameFormScreen(game: games[index]),
       ),
     );
 
     if (updatedGame != null) {
       setState(() {
         games[index] = updatedGame;
-      });
-      if (mounted) {
         showPopupMessage(context, '${updatedGame.name} updated');
-      }
+      });
     }
   }
 
@@ -304,32 +262,23 @@ class _ListGamesScreenState extends State<ListGamesScreen> {
     });
 
     // remove from database
-    gameRepository.deleteGame(game.id ?? 0);
+    gameRepository.deleteGame(game.id);
 
     showPopupMessage(context, '${game.name} deleted');
   }
 
-  //---------------------------------------------------------------------------
-
-  // @override
-  // void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  //   super.debugFillProperties(properties);
-  //   properties.add(DiagnosticsProperty<GameRepository>('gameRespository', gameRespository));
-  // }
-
   //--------------------------------------------------------------
 
-  // Future<void> _navigateToEdit(Game? game) async {
-  //   final result = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(builder: (context) => GameFormScreen(game: game)),
-  //   );
+  Future<void> _navigateToEdit(Game? game) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OldGameFormScreen(game: game )),
+    );
 
-  //   if (result == true) {
-  //     final data = await _fetchGamesListData();
-  //     games = data['gamesList'];
-  //   }
-  // }
+    if (result == true) {
+      _loadGames();
+    }
+  }
 
   //--------------------------------------------------------------
 }

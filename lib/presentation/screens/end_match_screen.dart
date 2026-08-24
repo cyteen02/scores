@@ -10,36 +10,33 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
-import 'package:scores/business/services/historic_stats_service.dart';
-import 'package:scores/business/services/match_stats_service.dart';
-import 'package:scores/data/extensions/int_extensions.dart';
+
 import 'package:scores/data/models/location.dart';
+import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/match_history.dart';
 import 'package:scores/data/models/match_player_stats.dart';
-import 'package:scores/data/repositories/location_repository.dart';
-import 'package:scores/data/repositories/match_history_repository.dart';
 
-import 'package:scores/data/repositories/match_player_stats_repository.dart';
-import 'package:scores/data/repositories/match_repository.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
+import 'package:scores/business/services/historic_stats_service.dart';
+import 'package:scores/business/services/match_stats_service.dart';
+
+import 'package:scores/data/extensions/int_extensions.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
 import 'package:scores/presentation/mixin/my_mixin.dart';
-import 'package:scores/data/models/match.dart';
 
 import 'package:scores/data/models/player.dart';
 import 'package:scores/data/services/match_storage.dart';
 import 'package:scores/presentation/screens/show_graph.dart';
 import 'package:scores/utils/my_utils.dart';
 
+//---------------------------------------------------------------------------
+
 class EndMatchScreen extends StatefulWidget {
   final Match match;
-  final MatchRepository matchRepository;
-  final MatchStatsRepository matchStatsRepository;
 
   const EndMatchScreen({
     super.key,
     required this.match,
-    required this.matchRepository,
-    required this.matchStatsRepository,
   });
 
   @override
@@ -50,20 +47,12 @@ class EndMatchScreen extends StatefulWidget {
 
 class _EndMatchScreenState extends State<EndMatchScreen> {
   late Match match;
-  late MatchRepository matchRepository;
-  late MatchStatsRepository matchStatsRepository;
-
-  LocationRepository locationRepository = LocationRepository();
-  MatchHistoryRepository matchHistoryRepository = MatchHistoryRepository();
 
   @override
   void initState() {
     debugMsg("_EndMatchScreenState initState");
     super.initState();
-
     match = widget.match; // Copy to local state
-    matchRepository = widget.matchRepository;
-    matchStatsRepository = widget.matchStatsRepository;
   }
 
   //-------------------------------------------------------------------
@@ -116,23 +105,18 @@ class _EndMatchScreenState extends State<EndMatchScreen> {
 
     // Get previous matches for this game & players
     List<MatchHistory> previousMatches = await matchHistoryRepository
-        .getByGameAndPlayerSet(match.gameId, match.playerSet.id??0);
+        .getByGameAndPlayerSet(match.game.id, match.playerSet.id??0);
 
     List<Location> locations = await locationRepository.getAll();
-
-
 
     // Get stats for previous matches for this game & players
     List<String> winnersList = await matchStatsRepository
         .getWinnersByGamePlayers(match.name, match.playersCsv);
     stats['winners'] = winnersList;
-
-    MatchPlayerStatsRepository matchPlayerStatsRepository =
-        MatchPlayerStatsRepository();
-
+    
     List<MatchPlayerStats> matchPlayerStatsList =
         await matchPlayerStatsRepository.getByGameIdAndPlayerSet(
-          match.gameId,
+          match.game.id,
           match.playerSet.id ?? 0,
         );
 

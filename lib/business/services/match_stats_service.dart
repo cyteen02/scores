@@ -19,6 +19,7 @@ import 'package:scores/data/models/game.dart';
 import 'package:scores/data/models/player.dart';
 import 'package:scores/data/models/match.dart';
 import 'package:scores/data/models/round.dart';
+
 import 'package:scores/utils/my_utils.dart';
 
 //-------------------------------------------------------------------
@@ -212,7 +213,7 @@ In this match:
   //-----------------------------------------------------------------
 
   List<Player> getWinningPlayers(Match match) {
-    if (match.winCondition == WinCondition.highestScore) {
+    if (match.game.winCondition == WinCondition.highestScore) {
       return getHighestScorePlayers(match);
     } else {
       return getLowestScorePlayers(match);

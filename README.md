@@ -23,3 +23,18 @@ Game = the type/ruleset (Monopoly, Poker, etc.)
 Match = the specific instance with player scores
 Player = the people who play 
 Round = one round of a card game or one line on a scorecard
+
+Screen ideas
+============
+
+
+Game    Num times played
+
+
+
+clicking on a line
+
+
+Date    Location        Winner      Other Players
+
+

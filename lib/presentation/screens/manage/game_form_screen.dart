@@ -10,28 +10,38 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
+
+import 'package:scores/data/models/game.dart';
+import 'package:scores/data/models/round_label.dart';
+
 import 'package:scores/data/extensions/color_extensions.dart';
 import 'package:scores/data/extensions/icon_extensions.dart';
 import 'package:scores/data/extensions/int_extensions.dart';
-import 'package:scores/data/models/game.dart';
-import 'package:scores/data/models/round_label.dart';
-import 'package:scores/data/repositories/game_repository.dart';
+
+import 'package:scores/data/repositories/repositories.dart';
+import 'package:scores/presentation/dialogs/pick_color.dart';
+
 import 'package:scores/utils/my_utils.dart';
 
-class GameEditScreen extends StatefulWidget {
-  final Game? game; // null for new game, existing game for edit
-  final GameRepository gameRepository;
+//---------------------------------------------------------------------------
 
-  const GameEditScreen({super.key, this.game, required this.gameRepository});
+class GameFormScreen extends StatefulWidget {
+  final Game? game; // null for new game, existing game for edit
+
+  const GameFormScreen({super.key, this.game});
 
   @override
-  State<GameEditScreen> createState() => _GameEditScreenState();
+  State<GameFormScreen> createState() => _GameFormScreenState();
 }
 
 //---------------------------------------------------------------------------
 
-class _GameEditScreenState extends State<GameEditScreen> {
+class _GameFormScreenState extends State<GameFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   late TextEditingController _nameController;
+  Color _selectedColor = Colors.black;
+
   late List<RoundLabel> _roundLabels;
 
   ShowFutureRoundsType showFutureRoundsType =
@@ -41,10 +51,7 @@ class _GameEditScreenState extends State<GameEditScreen> {
 
   GameLengthType gameLengthType = GameLengthType.variableLength;
 
-  late GameRepository gameRespository;
-
   bool editExistingGame = false;
-  final _formKey = GlobalKey<FormState>();
 
   //---------------------------------------------------------------------------
 
@@ -52,13 +59,13 @@ class _GameEditScreenState extends State<GameEditScreen> {
   void initState() {
     super.initState();
 
-    gameRespository = widget.gameRepository;
-
     Game? game = widget.game;
 
     if (game != null) {
       editExistingGame = true;
       _nameController = TextEditingController(text: game.name);
+      _selectedColor = game.color.toColor();
+
       showFutureRoundsType = game.showFutureRoundsType;
       winCondition = game.winCondition;
       gameLengthType = game.gameLengthType;
@@ -82,22 +89,32 @@ class _GameEditScreenState extends State<GameEditScreen> {
   //---------------------------------------------------------------------------
 
   Future<bool> _save() async {
+
+    debugMsg("GameEditScreen _save");
+
     if (_formKey.currentState!.validate()) {
+
+      debugMsg("GameEditScreen _save validate passed");
+
       final gameName = _nameController.text;
 
       if (!editExistingGame) {
-        bool gameExists = await gameRespository.nameExists(gameName);
+        bool gameExists = await gameRepository.nameExists(gameName);
         if (gameExists) {
           if (mounted) {
             showPopupError(context, "Game $gameName already exists");
           }
           return false;
-        }
+        } 
+        debugMsg("GameEditScreen _save game $gameName doesn't exist - good");
       }
 
+      int gameId = widget.game?.id ?? 0;
+
       final game = Game(
-        id: widget.game?.id,
+        id: gameId,
         name: _nameController.text.trim(),
+        color: _selectedColor.toInt(),
         showFutureRoundsType: showFutureRoundsType,
         winCondition: winCondition,
         gameLengthType: gameLengthType,
@@ -108,11 +125,11 @@ class _GameEditScreenState extends State<GameEditScreen> {
         Game savedGame;
         if (editExistingGame) {
           debugMsg("updating existing game $game");
-          await widget.gameRepository.updateGame(game);
+          await gameRepository.updateGame(game);
           savedGame = game;
         } else {
           debugMsg("savings new game $game");
-          savedGame = await widget.gameRepository.saveGameWithRoundLabels(game);
+          savedGame = await gameRepository.saveGameWithRoundLabels(game);
         }
         if (mounted) {
           Navigator.pop(context, savedGame); // Return true to indicate saved
@@ -124,6 +141,8 @@ class _GameEditScreenState extends State<GameEditScreen> {
           ).showSnackBar(SnackBar(content: Text('Error saving game: $e')));
         }
       }
+    } else { 
+      debugMsg("GameEditScreen _save validate failed");
     }
     return true;
   }
@@ -224,6 +243,44 @@ class _GameEditScreenState extends State<GameEditScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+
+              // Colour field
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: InkWell(
+                  onTap: _showColorPicker,
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Colour',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.palette),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: _selectedColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.grey.shade400),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(getColourName(_selectedColor)),
+                          ],
+                        ),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: DropdownButtonFormField<WinCondition>(
@@ -386,8 +443,20 @@ class _GameEditScreenState extends State<GameEditScreen> {
       ),
     );
   }
-}
 
+//---------------------------------------------------------------------------
+
+  Future<void> _showColorPicker() async {
+    Color? pickedColor = await showColorPicker2(context, _selectedColor);
+
+    if (pickedColor != null) {
+      setState(() {
+        _selectedColor = pickedColor;
+      });
+    }
+
+  }
+}
 //---------------------------------------------------------------------------
 
 class RoundLabelFormDialog extends StatefulWidget {
@@ -439,6 +508,7 @@ class _RoundLabelFormDialogState extends State<RoundLabelFormDialog> {
   //---------------------------------------------------------------------------
 
   void _save() {
+    debugMsg("RoundLabelFormDialog _save");
     if (_formKey.currentState!.validate()) {
       final roundLabel = RoundLabel(
         id: widget.roundLabel?.id,

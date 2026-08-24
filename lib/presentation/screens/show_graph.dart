@@ -1,9 +1,23 @@
+/*---------------------------------------------------------------------------
+*
+* Copyright (c) 2026 Paul Graves
+* All Rights Reserved.
+*
+* You may not use, distribute and modify this code under any circumstances
+*
+* Created: 07/06/2026
+*
+*----------------------------------------------------------------------------*/
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+
+import 'package:scores/data/models/match.dart';
+
 import 'package:scores/data/extensions/double_extensions.dart';
 import 'package:scores/data/extensions/int_extensions.dart';
 
-import 'package:scores/data/models/match.dart';
+//---------------------------------------------------------------------------
 
 class MatchScoreChartScreen extends StatelessWidget {
   final Match match;
@@ -138,12 +152,12 @@ class MatchScoreChart extends StatelessWidget {
     if (value > 0 && value.isInteger()) {
       int roundNum = value.toInt();
 
-      if (roundNum > match.roundLabels.length) {
+      if (roundNum > match.game.roundLabels.length) {
         label = Text('${value.toInt()}');
       } else {
         label = Text(
-          match.roundLabels[roundNum-1].name,
-          style: TextStyle(color: match.roundLabels[roundNum-1].color.toColor()),
+          match.game.roundLabels[roundNum-1].name,
+          style: TextStyle(color: match.game.roundLabels[roundNum-1].color.toColor()),
         );
       }
     }

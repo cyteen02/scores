@@ -10,29 +10,28 @@
 *----------------------------------------------------------------------------*/
 
 import 'package:flutter/material.dart';
+
+import 'package:scores/data/models/match.dart';
+import 'package:scores/data/models/match_player_stats.dart';
+import 'package:scores/data/models/player.dart';
+
 import 'package:scores/business/services/historic_stats_service.dart';
 import 'package:scores/business/services/match_stats_service.dart';
+
 import 'package:scores/data/extensions/int_extensions.dart';
-import 'package:scores/data/models/match_player_stats.dart';
 
-import 'package:scores/data/repositories/match_player_stats_repository.dart';
-import 'package:scores/data/repositories/match_repository.dart';
-import 'package:scores/data/repositories/match_stats_repository.dart';
-import 'package:scores/data/models/match.dart';
+import 'package:scores/data/repositories/repositories.dart';
 
-import 'package:scores/data/models/player.dart';
 import 'package:scores/utils/my_utils.dart';
+
+//---------------------------------------------------------------------------
 
 class StatsScreen extends StatefulWidget {
   final Match match;
-  final MatchRepository matchRepository;
-  final MatchStatsRepository matchStatsRepository;
 
   const StatsScreen({
     super.key,
     required this.match,
-    required this.matchRepository,
-    required this.matchStatsRepository,
   });
 
   @override
@@ -43,8 +42,6 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen> {
   late Match match;
-  late MatchRepository matchRepository;
-  late MatchStatsRepository matchStatsRepository;
 
   @override
   void initState() {
@@ -52,8 +49,6 @@ class _StatsScreenState extends State<StatsScreen> {
     super.initState();
 
     match = widget.match; // Copy to local state
-    matchRepository = widget.matchRepository;
-    matchStatsRepository = widget.matchStatsRepository;
   }
 
   //-------------------------------------------------------------------
@@ -88,13 +83,10 @@ class _StatsScreenState extends State<StatsScreen> {
     debugMsg("_fetchStatsData");
 
     // Get stats for previous matches for this game & players
-
-    MatchPlayerStatsRepository matchPlayerStatsRepository =
-        MatchPlayerStatsRepository();
-
+    
     List<MatchPlayerStats> matchPlayerStatsList =
         await matchPlayerStatsRepository.getByGameIdAndPlayerSet(
-          match.gameId,
+          match.game.id,
           match.playerSet.id ?? 0,
         );
 

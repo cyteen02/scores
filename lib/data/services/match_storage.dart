@@ -10,7 +10,6 @@
 *----------------------------------------------------------------------------*/
 
 import 'dart:convert';
-//import 'package:scores/data/models/game.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:scores/presentation/mixin/my_mixin.dart';
@@ -61,12 +60,12 @@ class MatchStorage with MyMixin {
     final prefs = await SharedPreferences.getInstance();
 
     //    String lastNumPlayersKey = "LAST-${match.name}-NUM-PLAYERS";
-    String lastNumPlayersKey = _getNumPlayersStorageKey(match.gameId);
+    String lastNumPlayersKey = _getNumPlayersStorageKey(match.game.id);
     await prefs.setInt(lastNumPlayersKey, match.numPlayers());
 
     debugMsg("saving $lastNumPlayersKey ${match.numPlayers()}");
 
-    String matchKey = _getMatchStorageKey(match.gameId, match.numPlayers());
+    String matchKey = _getMatchStorageKey(match.game.id, match.numPlayers());
     await prefs.setString(matchKey, jsonEncode(match.toJson()));
   }
 
@@ -103,4 +102,6 @@ class MatchStorage with MyMixin {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
   }
+  //---------------------------------------------------------------------------
+  
 }

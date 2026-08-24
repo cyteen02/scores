@@ -12,11 +12,8 @@
 import 'dart:convert';
 import 'dart:math';
 
-//import 'package:flutter/material.dart';
 import 'package:scores/data/models/location.dart';
 import 'package:scores/data/models/player_set.dart';
-import 'package:scores/data/models/round_label.dart';
-import 'package:scores/data/repositories/game_repository.dart';
 
 import 'package:scores/presentation/mixin/my_mixin.dart';
 import 'package:scores/utils/my_utils.dart';
@@ -25,21 +22,26 @@ import 'package:scores/data/models/player.dart';
 import 'package:scores/data/models/round.dart';
 import 'package:scores/data/models/game.dart';
 
-// a MATCH is where a group of PLAYERs play a GAME
+//---------------------------------------------------------------------------
+
+// a MATCH is where a SET of PLAYERs play a GAME
 
 class Match with MyMixin {
   int id;
-  int gameId;
-  Game? _game; // Cached, private
+//  int gameId;
+  Game game;
+//  Game? _game; // Cached, private
   PlayerSet playerSet;
   Location? location;
   List<Round> rounds;
-  final GameRepository _gameRepository = GameRepository();
-
+  
+  //---------------------------------------------------------------------------
+  
   // Constructor
   Match({
     int? id,
-    required this.gameId,
+//    required this.gameId,
+    required this.game,
     required this.playerSet,
     this.location,
     List<Round>? rounds,
@@ -62,32 +64,32 @@ class Match with MyMixin {
   // }
 
   // getters
-  String get name => _game?.name ?? "";
+  String get name => game.name;
 
 //---------------------------------------------------------------------------
 
-  WinCondition get winCondition =>
-      _game?.winCondition ?? WinCondition.highestScore;
+  // WinCondition get winCondition =>
+  //     game.winCondition;
 
 //---------------------------------------------------------------------------
 
-  GameLengthType get gameLengthType =>
-      _game?.gameLengthType ?? GameLengthType.variableLength;
+  // GameLengthType get gameLengthType =>
+  //     game.gameLengthType;
 
 
 //---------------------------------------------------------------------------
 
-  ShowFutureRoundsType get showFutureRounds =>
-      _game?.showFutureRoundsType ?? ShowFutureRoundsType.showNoFutureRounds;
+  // ShowFutureRoundsType get showFutureRounds =>
+  //     _game?.showFutureRoundsType ?? ShowFutureRoundsType.showNoFutureRounds;
 
 //---------------------------------------------------------------------------
 
-  bool get fixedNumRounds =>
-      (_game?.gameLengthType == GameLengthType.fixedLength);
+  // bool get fixedNumRounds =>
+  //     (_game?.gameLengthType == GameLengthType.fixedLength);
 
 //---------------------------------------------------------------------------
 
-  List<RoundLabel> get roundLabels => _game?.roundLabels ?? [];
+  // List<RoundLabel> get roundLabels => _game?.roundLabels ?? [];
 
 //---------------------------------------------------------------------------
 
@@ -95,29 +97,29 @@ class Match with MyMixin {
 
   //---------------------------------------------------------------------------
 
-  Future<Game> getGameForId(int gameId) async {
-    _game = await _gameRepository.getById(gameId);
-    return _game!;
-  }
+  // Future<Game> getGameForId(int gameId) async {
+  //   _game = await _gameRepository.getById(gameId);
+  //   return _game!;
+  // }
 
   // //---------------------------------------------------------------------------
 
-  Future<Game> getGame() async {
-    _game ??= await _gameRepository.getById(gameId);
-    return _game!;
-  }
+  // Future<Game> getGame() async {
+  //   _game ??= await _gameRepository.getById(gameId);
+  //   return _game!;
+  // }
 
   //---------------------------------------------------------------------------
   
-  Future<void> reloadGame() async {
-    await getGame();
+  // Future<void> reloadGame() async {
+  //   await getGame();
 
-    if ( fixedNumRounds && 
-         ( showFutureRounds == ShowFutureRoundsType.showAllFutureRounds ) &&
-       ( rounds.length < roundLabels.length ) ) {
-        initMissingRounds();
-      }
-  }
+  //   if ( fixedNumRounds && 
+  //        ( showFutureRounds == ShowFutureRoundsType.showAllFutureRounds ) &&
+  //      ( rounds.length < roundLabels.length ) ) {
+  //       initMissingRounds();
+  //     }
+  // }
 
   //---------------------------------------------------------------------------
 
@@ -141,7 +143,7 @@ class Match with MyMixin {
     rounds.clear();
     rounds.addAll(newRounds);
   }
-
+ 
   //-----------------------------------------------------------------
 
   void addPlayer(Player player) {
@@ -157,20 +159,25 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
 
   void initFirstRound() async {
-    final game = await getGame();
+
+    debugMsg("Match initFirstRound");
+
     Round firstRound = Round();
-    if (game.roundLabels.isNotEmpty) {
+    if ( game.roundLabels.isNotEmpty) {
       firstRound.roundLabel = game.roundLabels[0];
     }
     firstRound.initPlayerScores(playerSet.players);
+    rounds.clear();
     rounds.add(firstRound);
   }
 
   //-----------------------------------------------------------------
 
   void initAllRounds() async {
+
+    debugMsg("Match initAllRound");
+
     // Set the init scores for all the rounds
-    final game = await getGame();
 
     Round round;
     for (int r = 0; r < game.roundLabels.length; r++) {
@@ -182,10 +189,10 @@ class Match with MyMixin {
 
 //---------------------------------------------------------------------------
 
-  void initMissingRounds() async {
+  void initMissingRounds2() async {
 
     // Set the init scores for all the rounds
-    final game = await getGame();
+//    final game = await getGame();
 
     Round round;
     for (int r = rounds.length ; r < game.roundLabels.length; r++) {
@@ -197,14 +204,13 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
   
   bool useRoundLabels() {
-    return _game?.roundLabels.isNotEmpty ?? false;
+    return game.roundLabels.isNotEmpty;
   }
 
   //-----------------------------------------------------------------
 
   ShowFutureRoundsType showFutureRoundsType() {
-    return _game?.showFutureRoundsType ??
-        ShowFutureRoundsType.showNoFutureRounds;
+    return game.showFutureRoundsType ;
   }
 
   //-----------------------------------------------------------------
@@ -415,13 +421,11 @@ class Match with MyMixin {
     //    rounds.clear();
     rounds = [];
 
-    if (_game != null) {
-      if (_game?.showFutureRoundsType ==
+      if (game.showFutureRoundsType ==
           ShowFutureRoundsType.showAllFutureRounds) {
         // initialise all the next rounds
         initAllRounds();
       }
-    }
   }
 
   //-----------------------------------------------------------------
@@ -438,7 +442,7 @@ class Match with MyMixin {
 
   bool matchFinished() {
     final finished =
-        (rounds.isNotEmpty && rounds.length == _game?.roundLabels.length);
+        (rounds.isNotEmpty && rounds.length == game.roundLabels.length);
 
     debugMsg("matchFinished finished $finished");
 
@@ -454,8 +458,7 @@ class Match with MyMixin {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'name': name,
-      'game_id': gameId,
+      'game': game.toMap(),
       'players': jsonEncode(playerSet.players.map((p) => p.toMap()).toList()),
       'location': location?.toMap(),
       'rounds': jsonEncode(rounds.map((r) => r.toMap()).toList()),
@@ -465,10 +468,11 @@ class Match with MyMixin {
   //-----------------------------------------------------------------
   // For JSON serialization (calls toMap)
   //  Map<String, dynamic> toJson() => toMap();
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'game_id': gameId,
+      'game': game.toJson(),
       'playerSet': playerSet.toJson(),
       'location': location?.toMap(),
       'rounds': jsonEncode(rounds.map((r) => r.toMap()).toList()),
@@ -481,7 +485,7 @@ class Match with MyMixin {
   factory Match.fromJson(Map<String, dynamic> json) {
     int id = json['id'];
 
-    int gameId = json['game_id'];
+    Game game = Game.fromJson(json['game']);
 
     PlayerSet playerSet = PlayerSet();
     if (json.containsKey('playerSet')) {
@@ -516,15 +520,13 @@ class Match with MyMixin {
 
     Match match = Match(
       id: id,
-      gameId: gameId,
+      game: game,
       playerSet: playerSet,
       location: location,
       rounds: rounds,
     );
 
-    debugMsg("++++++++++++++++++++++++++++++++++++++++");
     debugMsg(match.toString());
-    debugMsg("++++++++++++++++++++++++++++++++++++++++");
 
     return match;
   }
@@ -533,14 +535,14 @@ class Match with MyMixin {
   // Create a copy with optional field updates
   Match copyWith({
     int? id,
-    int? gameId,
+    required Game game,
     PlayerSet? playerSet,
     Location? location,
     List<Round>? rounds,
   }) {
     return Match(
       id: id ?? this.id,
-      gameId: gameId ?? this.gameId,
+      game: game,
       playerSet: playerSet ?? this.playerSet,
       location: location ?? this.location,
       rounds: rounds ?? this.rounds,
@@ -553,7 +555,7 @@ class Match with MyMixin {
   String toString() {
     StringBuffer buffer = StringBuffer();
 
-    buffer.write("id $id gameId $gameId");
+    buffer.write("id $id gameId ${game.id}");
 
     buffer.write("location $location");
 
